@@ -39,6 +39,8 @@
 
 ## The Problem
 
+![Architecture diagram](docs/images/arch.png)
+
 Every data team has the same nightmare.
 
 You get a CSV from a stakeholder. It has:
