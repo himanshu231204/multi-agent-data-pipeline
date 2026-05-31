@@ -30,8 +30,8 @@
 
 <br/>
 
-<!-- SCREENSHOT: Take a full browser screenshot of your app homepage (dark theme, all 5 agent cards visible) and save as docs/screenshots/hero.png -->
-<img src="docs/screenshots/hero.png" alt="Multi-Agent Data Pipeline UI" width="900"/>
+<!-- SCREENSHOT: Take a full browser screenshot of your app homepage (dark theme, all 5 agent cards visible) and save as docs/images/hero.png -->
+<img src="docs/images/hero.png" alt="Multi-Agent Data Pipeline UI" width="900"/>
 
 </div>
 
@@ -152,9 +152,9 @@ multi-agent-pipeline demo/sample_data.csv
 
 ---
 
-<!-- SCREENSHOT: Take a screenshot of your terminal showing the pipeline running with all 5 agents completing successfully and the results table. Save as docs/screenshots/cli_output.png -->
+<!-- SCREENSHOT: Take a screenshot of your terminal showing the pipeline running with all 5 agents completing successfully and the results table. Save as docs/images/cli_output.png -->
 <div align="center">
-<img src="docs/screenshots/cli_output.png" alt="CLI Output" width="800"/>
+<img src="docs/images/cli_output.png" alt="CLI Output" width="800"/>
 <br/>
 <em>The CLI in action — 5 agents processing 15 rows in real time</em>
 </div>
@@ -167,9 +167,9 @@ multi-agent-pipeline demo/sample_data.csv
 
 Upload any CSV — the agents find and fix everything automatically.
 
-<!-- SCREENSHOT: In the app, tick "Use demo dataset", click "RUN PIPELINE", wait for all 5 agents to complete, then screenshot the full results section showing the metrics row (5 green numbers) and the tabs below. Save as docs/screenshots/csv_results.png -->
+<!-- SCREENSHOT: In the app, tick "Use demo dataset", click "RUN PIPELINE", wait for all 5 agents to complete, then screenshot the full results section showing the metrics row (5 green numbers) and the tabs below. Save as docs/images/csv_results.png -->
 <div align="center">
-<img src="docs/screenshots/csv_results.png" alt="CSV Pipeline Results" width="900"/>
+<img src="docs/images/csv_results.png" alt="CSV Pipeline Results" width="900"/>
 <br/>
 <em>5 agents process 15 retail transactions — 7 anomalies detected, 91% completeness score</em>
 </div>
@@ -194,11 +194,11 @@ Upload any CSV — the agents find and fix everything automatically.
 
 Upload any PDF — contracts, reports, invoices, meeting notes.
 
-<!-- SCREENSHOT: In the app click "PDF Intelligence" tab, tick "Use demo PDF", click "RUN PDF PIPELINE", wait for all 5 agents, screenshot the results showing metrics row and tabs. Save as docs/screenshots/pdf_results.png -->
+<!-- SCREENSHOT: In the app click "PDF Intelligence" tab, tick "Use demo PDF", click "RUN PDF PIPELINE", wait for all 5 agents, screenshot the results showing metrics row and tabs. Save as docs/images/pdf_results.png -->
 <div align="center">
-<<img src="docs/screenshots/pdf_results_1.png" alt="PDF Intelligence Results" width="900"/>
+<<img src="docs/images/pdf_results_1.png" alt="PDF Intelligence Results" width="900"/>
 <br/>
-<img src="docs/screenshots/pdf_results_2.png" alt="PDF Intelligence Detail" width="900"/>
+<img src="docs/images/pdf_results_2.png" alt="PDF Intelligence Detail" width="900"/>
 <br/>
 <em>PDF agents extract entities, detect GDPR risks, and pull action items from a quarterly report</em>
 </div>
@@ -209,11 +209,11 @@ Upload any PDF — contracts, reports, invoices, meeting notes.
 
 Connect directly to your database — agents fetch a table and run the full pipeline.
 
-<!-- SCREENSHOT: In the app click "Database Connectors" tab, select "Azure Databricks" from the dropdown, screenshot the connection form. Save as docs/screenshots/connectors.png -->
+<!-- SCREENSHOT: In the app click "Database Connectors" tab, select "Azure Databricks" from the dropdown, screenshot the connection form. Save as docs/images/connectors.png -->
 <div align="center">
-<img src="docs/screenshots/connectors.png" alt="Database Connectors" width="900"/>
+<img src="docs/images/connectors.png" alt="Database Connectors" width="900"/>
 <br/>
-<img src="docs/screenshots/connectors1.png" alt="Database Connectors Detail" width="900"/>
+<img src="docs/images/connectors1.png" alt="Database Connectors Detail" width="900"/>
 <br/>
 <em>5 database connectors — Azure Databricks, Snowflake, PostgreSQL, MySQL, BigQuery</em>
 </div>
