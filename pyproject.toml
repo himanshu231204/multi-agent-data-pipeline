@@ -42,6 +42,7 @@ dependencies = [
     "psycopg2-binary>=2.9.0",
     "mysql-connector-python>=8.0.0",
     "google-cloud-bigquery>=3.0.0",
+    "duckdb>=1.0.0",
     "fpdf2>=2.7.0",
 ]
 

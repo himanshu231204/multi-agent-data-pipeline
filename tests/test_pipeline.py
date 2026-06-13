@@ -128,6 +128,47 @@ class TestCSVLoading:
         assert len(df) > 0, "Demo CSV is empty"
 
 
+class TestDuckDBConnector:
+
+    @pytest.fixture
+    def duckdb_file(self, tmp_path):
+        import duckdb
+        db_path = str(tmp_path / "test.duckdb")
+        conn = duckdb.connect(db_path)
+        conn.execute("""
+            CREATE TABLE transactions (
+                transaction_id VARCHAR,
+                product_name VARCHAR,
+                unit_price DOUBLE
+            )
+        """)
+        conn.execute("""
+            INSERT INTO transactions VALUES
+            ('TXN001', 'Product A', 10.00),
+            ('TXN002', 'Product B', 15.00),
+            ('TXN003', 'Product C', 5.00)
+        """)
+        conn.close()
+        return db_path
+
+    def test_list_tables(self, duckdb_file):
+        from src.connectors.duckdb_conn import list_tables
+        tables = list_tables(duckdb_file)
+        assert "transactions" in tables
+
+    def test_fetch_table(self, duckdb_file):
+        from src.connectors.duckdb_conn import fetch_table
+        df = fetch_table(duckdb_file, "transactions")
+        assert len(df) == 3
+        assert "transaction_id" in df.columns
+        assert "unit_price" in df.columns
+
+    def test_fetch_table_limit(self, duckdb_file):
+        from src.connectors.duckdb_conn import fetch_table
+        df = fetch_table(duckdb_file, "transactions", limit=2)
+        assert len(df) == 2
+
+
 class TestPDFExists:
 
     def test_demo_pdf_exists(self):

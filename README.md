@@ -517,6 +517,17 @@ df = fetch_table(
 )
 ```
 
+#### DuckDB
+
+```python
+from src.connectors.duckdb_conn import fetch_table
+
+df = fetch_table(
+    database="/path/to/my_database.duckdb",
+    table="my_table"
+)
+```
+
 ---
 
 ### Connector Status
@@ -528,9 +539,9 @@ df = fetch_table(
 | PostgreSQL | User/Pass | ✅ | ✅ | Stable |
 | MySQL | User/Pass | ✅ | ✅ | Stable |
 | BigQuery | Service Account JSON | ✅ | ✅ | Stable |
+| DuckDB | File path | ✅ | ✅ | Stable |
 | MongoDB | — | 🔜 | 🔜 | Planned |
 | Redshift | — | 🔜 | 🔜 | Planned |
-| DuckDB | — | 🔜 | 🔜 | Planned |
 | Microsoft Fabric | — | 🔜 | 🔜 | Planned |
 
 > Want to add a connector? See [Contributing](#contributing)
@@ -695,7 +706,6 @@ We want to support every major database. Next targets:
 |----------|-----------|-------|
 | MongoDB | Medium | #1 |
 | Redshift | Easy | #2 |
-| DuckDB | Easy | #3 |
 | Microsoft Fabric | Medium | #4 |
 | Elasticsearch | Hard | #5 |
 
@@ -884,7 +894,7 @@ tests/test_pipeline.py::TestCSVLoading::test_demo_csv_has_rows PASSED
 - [ ] pip package — `pip install multi-agent-data-pipeline`
 - [ ] MongoDB connector
 - [ ] Redshift connector
-- [ ] DuckDB connector
+- [x] DuckDB connector
 - [ ] Microsoft Fabric connector
 - [ ] Async parallel agent execution
 - [ ] Agent memory — learn from past runs
