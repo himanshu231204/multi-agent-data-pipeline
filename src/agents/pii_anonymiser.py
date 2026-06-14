@@ -42,7 +42,7 @@ def run(csv_preview: str, total_rows: int) -> "PIIAnonymiserResult":
             all_findings.extend([f"Row {i}: {f}" for f in findings])
             
     cleaned_preview = "\n".join(cleaned_lines)
-    pii_types = list({f.split(":")[0].strip() for f in all_findings})
+    pii_types = sorted({f.split(": ")[1].strip() for f in all_findings})
     
     print(f"[PII Anonymiser] Done — {rows_affected} rows had PII")
     
