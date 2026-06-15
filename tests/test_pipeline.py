@@ -11,6 +11,7 @@ from src.models import (
     TransformerResult,
     AnomalyResult,
     SummariserResult,
+    PIIAnonymiserResult,
     PipelineResult
 )
 
@@ -74,6 +75,17 @@ class TestModels:
         assert len(result.recommendations) == 1
         assert "Total Rows" in result.key_stats
 
+    def test_pii_anonymiser_result_creation(self):
+        result = PIIAnonymiserResult(
+            pii_found=["Row 1: email: 1 found"],
+            rows_affected=1,
+            pii_types_detected=["email"],
+            anonymised_preview="name,email\nJohn,j***@***.com"
+        )
+        assert result.rows_affected == 1
+        assert "email" in result.pii_types_detected
+        assert "j***@***.com" in result.anonymised_preview
+
     def test_pipeline_result_creation(self):
         cleaner = CleanerResult(
             issues_fixed=["Fixed nulls"],
@@ -127,6 +139,68 @@ class TestCSVLoading:
         df = pd.read_csv("demo/sample_data.csv")
         assert len(df) > 0, "Demo CSV is empty"
 
+class TestPIIAnonymiser:
+
+    PII_CSV = (
+        "name,email,phone,card_number\n"
+        "John Doe,john.doe@example.com,+44 7911 123456,4111 1111 1111 1234\n"
+        "Jane Smith,jane@company.co.uk,07123 456789,5500-0000-0000-0004"
+    )
+
+    def test_anonymise_text_masks_email(self):
+        from src.agents.pii_anonymiser import anonymise_text
+        cleaned, findings = anonymise_text("Contact: john.doe@example.com")
+        assert "john.doe@example.com" not in cleaned
+        assert "j***@***.com" in cleaned
+        assert any(f.startswith("email") for f in findings)
+
+    def test_anonymise_text_masks_card_number(self):
+        from src.agents.pii_anonymiser import anonymise_text
+        cleaned, findings = anonymise_text("Card: 4111 1111 1111 1234")
+        assert "4111 1111 1111 1234" not in cleaned
+        assert "1234" in cleaned
+        assert any(f.startswith("card_number") for f in findings)
+
+    def test_anonymise_text_masks_phone(self):
+        from src.agents.pii_anonymiser import anonymise_text
+        cleaned, findings = anonymise_text("Call me on 07123 456789")
+        assert "07123 456789" not in cleaned
+        assert any(f.startswith("phone") for f in findings)
+
+    def test_anonymise_text_does_not_flag_iso_dates_as_phone(self):
+        """Regression test: ISO dates (YYYY-MM-DD) must not be detected/masked
+        as phone numbers (8 digits is below the 9-digit phone threshold)."""
+        from src.agents.pii_anonymiser import anonymise_text
+        cleaned, findings = anonymise_text("TXN001,2024-01-15,CUST_001,Product A")
+        assert findings == []
+        assert cleaned == "TXN001,2024-01-15,CUST_001,Product A"
+
+    def test_anonymise_text_no_pii(self):
+        from src.agents.pii_anonymiser import anonymise_text
+        cleaned, findings = anonymise_text("transaction_id,total\nTXN001,20.00")
+        assert findings == []
+        assert cleaned == "transaction_id,total\nTXN001,20.00"
+
+    def test_run_detects_and_masks_pii(self):
+        from src.agents.pii_anonymiser import run
+        result = run(self.PII_CSV, total_rows=2)
+        assert isinstance(result, PIIAnonymiserResult)
+        assert result.rows_affected == 2
+        assert "email" in result.pii_types_detected
+        assert "card_number" in result.pii_types_detected
+        assert "phone" in result.pii_types_detected
+        assert "john.doe@example.com" not in result.anonymised_preview
+        assert "4111 1111 1111 1234" not in result.anonymised_preview
+        assert "07123 456789" not in result.anonymised_preview
+
+    def test_run_demo_csv_has_no_false_positives(self):
+        """The demo dataset contains no real PII — only dates — so the
+        agent should report zero affected rows after the regex fix."""
+        from src.agents.pii_anonymiser import run
+        result = run(SAMPLE_CSV, total_rows=5)
+        assert result.rows_affected == 0
+        assert result.pii_types_detected == []
+        assert result.anonymised_preview == SAMPLE_CSV.strip()
 
 class TestDuckDBConnector:
 
