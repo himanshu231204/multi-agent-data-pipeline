@@ -7,7 +7,7 @@
 
 # Multi-Agent Data Pipeline
 
-### 5 specialised AI agents that autonomously process any data source
+### 6 specialised AI agents that autonomously process any data source
 
 <br/>
 
@@ -25,7 +25,7 @@
 <br/>
 
 > *Upload a messy CSV, a complex PDF, or connect your database —*
-> *watch 5 AI agents autonomously clean, validate, transform,*
+> *watch 6 AI agents autonomously clean, anonymise, validate, transform,*
 > *detect anomalies and summarise your data in real time.*
 
 <br/>
@@ -69,13 +69,13 @@ The result is a complete data quality report — in seconds.
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                                                             │
-│   🧹 Cleaner    →    🛡 Validator    →    ⚡ Transformer   │
+│   🧹 Cleaner    →   🔒 PII Anonymiser   →   🛡 Validator   │
 │                                                             │
-│              📡 Anomaly Detector    →    📊 Summariser     │
+│   ⚡ Transformer  →  📡 Anomaly Detector → 📊 Summariser   │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
                            ↓
-     Clean data + Full quality report + Business insights
+     Clean, anonymised data + Full quality report + Business insights
 
 No config files. No rigid schemas. No rules to write and maintain.
 
@@ -236,7 +236,7 @@ No LangChain. No bloated frameworks. Just clean Python and direct API calls.
 
 ---
 
-### The 5 CSV Pipeline Agents
+### The 6 CSV Pipeline Agents
 
 #### 🧹 Agent 1 — Cleaner
 Identifies and fixes data quality issues before anything else runs.
@@ -254,7 +254,25 @@ Identifies and fixes data quality issues before anything else runs.
 }
 ```
 
-#### 🛡 Agent 2 — Validator
+#### 🔒 Agent 2 — PII Anonymiser
+Scans every row for personal data — emails, phone numbers, card numbers and
+postcodes — and masks it before any other agent (or any cloud LLM call) sees
+it.
+
+```python
+{
+    "pii_found": [
+        "Row 4: email: 1 found",
+        "Row 9: phone: 1 found",
+        "Row 12: card_number: 1 found"
+    ],
+    "rows_affected": 3,
+    "pii_types_detected": ["email", "phone", "card_number"],
+    "anonymised_preview": "...,j***@***.com,***** ****56,**** **** **** 1234,..."
+}
+```
+
+#### 🛡 Agent 3 — Validator
 Checks schema correctness, data types, constraints and completeness.
 
 ```python
@@ -272,7 +290,7 @@ Checks schema correctness, data types, constraints and completeness.
 }
 ```
 
-#### ⚡ Agent 3 — Transformer
+#### ⚡ Agent 4 — Transformer
 Standardises, normalises and derives new columns from existing data.
 
 ```python
@@ -286,7 +304,7 @@ Standardises, normalises and derives new columns from existing data.
 }
 ```
 
-#### 📡 Agent 4 — Anomaly Detector
+#### 📡 Agent 5 — Anomaly Detector
 Finds statistical outliers, impossible values and suspicious patterns.
 
 ```python
@@ -301,7 +319,7 @@ Finds statistical outliers, impossible values and suspicious patterns.
 }
 ```
 
-#### 📊 Agent 5 — Summariser
+#### 📊 Agent 6 — Summariser
 Produces a business-readable summary with key stats and recommendations.
 
 ```python
@@ -339,6 +357,7 @@ multi-agent-data-pipeline/
 ├── src/
 │   ├── agents/
 │   │   ├── cleaner.py           # CSV cleaning agent
+│   │   ├── pii_anonymiser.py    # PII detection & anonymisation agent
 │   │   ├── validator.py         # CSV validation agent
 │   │   ├── transformer.py       # CSV transformation agent
 │   │   ├── anomaly.py           # Anomaly detection agent
@@ -364,7 +383,7 @@ multi-agent-data-pipeline/
 │   ├── aws/                     # AWS Lambda implementation
 │   └── docker/                  # Docker deployment
 ├── tests/
-│   └── test_pipeline.py         # 11 passing tests
+│   └── test_pipeline.py         # 25 passing tests
 ├── app.py                       # Streamlit UI
 ├── main.py                      # CLI entrypoint
 └── requirements.txt
@@ -382,20 +401,24 @@ Pipeline Orchestrator
 │   Agent 1: Cleaner  │ ──→ CleanerResult (Pydantic)
 └─────────────────────┘
 ↓
+┌───────────────────────────┐
+│ Agent 2: PII Anonymiser   │ ──→ PIIAnonymiserResult (Pydantic)
+└───────────────────────────┘
+↓
 ┌──────────────────────┐
-│  Agent 2: Validator  │ ──→ ValidatorResult (Pydantic)
+│  Agent 3: Validator  │ ──→ ValidatorResult (Pydantic)
 └──────────────────────┘
 ↓
 ┌────────────────────────┐
-│ Agent 3: Transformer   │ ──→ TransformerResult (Pydantic)
+│ Agent 4: Transformer   │ ──→ TransformerResult (Pydantic)
 └────────────────────────┘
 ↓
 ┌──────────────────────────────┐
-│ Agent 4: Anomaly Detector    │ ──→ AnomalyResult (Pydantic)
+│ Agent 5: Anomaly Detector    │ ──→ AnomalyResult (Pydantic)
 └──────────────────────────────┘
 ↓
 ┌─────────────────────────────────────────┐
-│ Agent 5: Summariser (with full context) │ ──→ SummariserResult
+│ Agent 6: Summariser (with full context) │ ──→ SummariserResult
 └─────────────────────────────────────────┘
 ↓
 PipelineResult (combined)
@@ -722,7 +745,6 @@ Deploy this on your cloud and contribute the implementation:
 Ideas for new agents:
 
 - **Schema Inferencer** — auto-detect and document schema
-- **PII Anonymiser** — mask sensitive data automatically
 - **Data Lineage Tracker** — track where each column came from
 - **Duplicate Detector** — find near-duplicate records
 - **Language Translator** — translate non-English data fields
@@ -855,13 +877,23 @@ tests/test_pipeline.py::TestModels::test_validator_result_creation PASSED
 tests/test_pipeline.py::TestModels::test_transformer_result_creation PASSED
 tests/test_pipeline.py::TestModels::test_anomaly_result_creation PASSED
 tests/test_pipeline.py::TestModels::test_summariser_result_creation PASSED
+tests/test_pipeline.py::TestModels::test_pii_anonymiser_result_creation PASSED
 tests/test_pipeline.py::TestModels::test_pipeline_result_creation PASSED
 tests/test_pipeline.py::TestCSVLoading::test_csv_loads_correctly PASSED
 tests/test_pipeline.py::TestCSVLoading::test_csv_preview_generation PASSED
 tests/test_pipeline.py::TestCSVLoading::test_demo_csv_exists PASSED
 tests/test_pipeline.py::TestCSVLoading::test_demo_csv_has_correct_columns PASSED
 tests/test_pipeline.py::TestCSVLoading::test_demo_csv_has_rows PASSED
-11 passed in 0.42s
+tests/test_pipeline.py::TestPIIAnonymiser::test_anonymise_text_masks_email PASSED
+tests/test_pipeline.py::TestPIIAnonymiser::test_anonymise_text_masks_card_number PASSED
+tests/test_pipeline.py::TestPIIAnonymiser::test_anonymise_text_masks_phone PASSED
+tests/test_pipeline.py::TestPIIAnonymiser::test_anonymise_text_does_not_flag_iso_dates_as_phone PASSED
+tests/test_pipeline.py::TestPIIAnonymiser::test_anonymise_text_no_pii PASSED
+tests/test_pipeline.py::TestPIIAnonymiser::test_run_detects_and_masks_pii PASSED
+tests/test_pipeline.py::TestPIIAnonymiser::test_run_demo_csv_has_no_false_positives PASSED
+... (plus DuckDB connector, PDF and environment tests)
+25 passed in 0.6s
+
 
 ---
 
