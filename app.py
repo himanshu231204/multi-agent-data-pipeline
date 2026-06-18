@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.agents import cleaner, validator, transformer, anomaly, summariser
+from src.agents import cleaner, validator, transformer, anomaly, summariser,  pii_anonymiser
 
 st.set_page_config(
     page_title="Multi-Agent Pipeline · Britcore.AI",
@@ -87,7 +87,7 @@ section[data-testid="stSidebar"] { display: none !important; }
 
 .agents-strip {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 10px;
     padding: 24px 48px;
     border-bottom: 1px solid #0f1f35;
@@ -117,6 +117,9 @@ section[data-testid="stSidebar"] { display: none !important; }
 .ac:nth-child(4) .ac-num, .ac:nth-child(4) .ac-name { color: #34d399; }
 .ac:nth-child(5) { border-color: #fb718544; background: #2c0a14; }
 .ac:nth-child(5) .ac-num, .ac:nth-child(5) .ac-name { color: #fb7185; }
+.ac:nth-child(6) { border-color: #c084fc44; background: #1e0a2c; }
+.ac:nth-child(6) .ac-num, .ac:nth-child(6) .ac-name { color: #c084fc; }
+
 
 .mode-tabs {
     display: flex;
@@ -292,14 +295,15 @@ st.markdown(f"""
 st.markdown("""
 <div class="hero">
     <h1>Your data,<br><em>processed autonomously.</em></h1>
-    <p>CSV · PDF · Databases — 5 AI agents clean, validate, transform, detect anomalies & summarise</p>
+    <p>CSV · PDF · Databases — 6 AI agents clean, anonymise, validate, transform, detect anomalies & summarise</p>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="agents-strip">
     <div class="ac"><div class="ac-num">01</div><div class="ac-icon">🧹</div><div class="ac-name">Cleaner</div><div class="ac-desc">Fixes nulls, formats & inconsistencies</div></div>
-    <div class="ac"><div class="ac-num">02</div><div class="ac-icon">🛡</div><div class="ac-name">Validator</div><div class="ac-desc">Checks schema, types & constraints</div></div>
+    <div class="ac"><div class="ac-num">02</div><div class="ac-icon">🔒</div><div class="ac-name">PII Anonymiser</div><div class="ac-desc">Masks emails, phones, postcodes & cards</div></div>
+    <div class="ac"><div class="ac-num">03</div><div class="ac-icon">🛡</div><div class="ac-name">Validator</div><div class="ac-desc">Checks schema, types & constraints</div></div>
     <div class="ac"><div class="ac-num">03</div><div class="ac-icon">⚡</div><div class="ac-name">Transformer</div><div class="ac-desc">Derives columns & standardises data</div></div>
     <div class="ac"><div class="ac-num">04</div><div class="ac-icon">📡</div><div class="ac-name">Anomaly</div><div class="ac-desc">Finds outliers & suspicious values</div></div>
     <div class="ac"><div class="ac-num">05</div><div class="ac-icon">📊</div><div class="ac-name">Summariser</div><div class="ac-desc">Generates insights & recommendations</div></div>
@@ -320,41 +324,54 @@ def run_pipeline_ui(df):
     preview = df.head(20).to_csv(index=False)
     progress = st.progress(0)
 
-    with st.status("Agent 1 / 5 — Cleaner", expanded=False) as s:
+    with st.status("Agent 1 / 6 — Cleaner", expanded=False) as s:
         cleaner_result = cleaner.run(preview, total_rows)
-        s.update(label="✅ Agent 1 / 5 — Cleaner complete", state="complete")
-    progress.progress(20)
+        s.update(label="✅ Agent 1 / 6 — Cleaner complete", state="complete")
+    progress.progress(17)
 
-    with st.status("Agent 2 / 5 — Validator", expanded=False) as s:
+    with st.status("Agent 2 / 6 — PII Anonymiser", expanded=False) as s:
+        pii_result = pii_anonymiser.run(preview, total_rows)
+        s.update(label="✅ Agent 2 / 6 — PII Anonymiser complete", state="complete")
+    progress.progress(33)
+
+    with st.status("Agent 3 / 6 — Validator", expanded=False) as s:
         validator_result = validator.run(preview, total_rows)
-        s.update(label="✅ Agent 2 / 5 — Validator complete", state="complete")
-    progress.progress(40)
-
-    with st.status("Agent 3 / 5 — Transformer", expanded=False) as s:
+        s.update(label="✅ Agent 3 / 6 — Validator complete", state="complete")
+    progress.progress(50)
+    
+    with st.status("Agent 4 / 6 — Transformer", expanded=False) as s:
         transformer_result = transformer.run(preview, total_rows)
-        s.update(label="✅ Agent 3 / 5 — Transformer complete", state="complete")
-    progress.progress(60)
+        s.update(label="✅ Agent 4 / 6 — Transformer complete", state="complete")
+    progress.progress(67)
 
-    with st.status("Agent 4 / 5 — Anomaly Detector", expanded=False) as s:
+    with st.status("Agent 5 / 6 — Anomaly Detector", expanded=False) as s:
         anomaly_result = anomaly.run(preview, total_rows)
-        s.update(label="✅ Agent 4 / 5 — Anomaly Detector complete", state="complete")
-    progress.progress(80)
+        s.update(label="✅ Agent 5 / 6 — Anomaly Detector complete", state="complete")
+    progress.progress(83)
 
-    context = f"Cleaner: {len(cleaner_result.issues_fixed)} issues. Validator: {validator_result.completeness_score}%. Transformer: {len(transformer_result.transformations_applied)} transforms. Anomaly: {anomaly_result.anomaly_count} found."
+    context = (
+        f"Cleaner: {len(cleaner_result.issues_fixed)} issues. "
+        f"PII Anonymiser: {pii_result.rows_affected} rows contained PII "
+        f"({', '.join(pii_result.pii_types_detected) or 'none detected'}). "
+        f"Validator: {validator_result.completeness_score}%. "
+        f"Transformer: {len(transformer_result.transformations_applied)} transforms. "
+        f"Anomaly: {anomaly_result.anomaly_count} found."
+    )
 
-    with st.status("Agent 5 / 5 — Summariser", expanded=False) as s:
+    with st.status("Agent 6 / 6 — Summariser", expanded=False) as s:
         summariser_result = summariser.run(preview, total_rows, context)
-        s.update(label="✅ Agent 5 / 5 — Summariser complete", state="complete")
+        s.update(label="✅ Agent 6 / 6 — Summariser complete", state="complete")
     progress.progress(100)
 
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
     c1.metric("Rows Fixed", cleaner_result.rows_affected)
-    c2.metric("Completeness", f"{validator_result.completeness_score}%")
-    c3.metric("Transformed", transformer_result.rows_transformed)
-    c4.metric("Anomalies", anomaly_result.anomaly_count)
-    c5.metric("Recommendations", len(summariser_result.recommendations))
+    c2.metric("PII Rows Masked", pii_result.rows_affected)
+    c3.metric("Completeness", f"{validator_result.completeness_score}%")
+    c4.metric("Transformed", transformer_result.rows_transformed)
+    c5.metric("Anomalies", anomaly_result.anomaly_count)
+    c6.metric("Recommendations", len(summariser_result.recommendations))
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["🧹 Cleaner", "🛡 Validator", "⚡ Transformer", "📡 Anomaly", "📊 Summariser"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["🧹 Cleaner", "🔒 PII Anonymiser", "🛡 Validator", "⚡ Transformer", "📡 Anomaly", "📊 Summariser"])
 
     with tab1:
         for issue in cleaner_result.issues_fixed:
@@ -363,6 +380,21 @@ def run_pipeline_ui(df):
             st.info(f"Cleaned columns: {', '.join(cleaner_result.cleaned_columns)}")
 
     with tab2:
+        if pii_result.pii_types_detected:
+            st.warning(f"PII types found: {', '.join(pii_result.pii_types_detected)}")
+            st.markdown(f"**Rows containing PII:** {pii_result.rows_affected}")
+        else:
+            st.success("No PII detected in the preview rows")
+
+        if pii_result.pii_found:
+            st.markdown("**Findings:**")
+            for f in pii_result.pii_found:
+                st.markdown(f"- {f}")
+
+        with st.expander("View anonymised preview"):
+            st.code(pii_result.anonymised_preview, language="csv")
+
+    with tab3:
         st.markdown(f"**Schema valid:** {'✅ Yes' if validator_result.schema_ok else '❌ No'}")
         st.markdown(f"**Completeness:** {validator_result.completeness_score}%")
         for v in validator_result.violations:
@@ -370,18 +402,18 @@ def run_pipeline_ui(df):
         for c in validator_result.passed_checks:
             st.success(c)
 
-    with tab3:
+    with tab4:
         for t in transformer_result.transformations_applied:
             st.markdown(f"- {t}")
         if transformer_result.new_columns:
             st.info(f"New columns: {', '.join(transformer_result.new_columns)}")
 
-    with tab4:
+    with tab5:
         st.markdown(f"**Risk score:** {anomaly_result.anomaly_score}/10")
         for a in anomaly_result.anomalies:
             st.warning(a)
 
-    with tab5:
+    with tab6:
         st.info(summariser_result.summary)
         st.json(summariser_result.key_stats)
         for r in summariser_result.recommendations:
@@ -390,6 +422,7 @@ def run_pipeline_ui(df):
     full_results = {
         "total_rows": total_rows,
         "cleaner": cleaner_result.model_dump(),
+        "pii_anonymiser": pii_result.model_dump(),
         "validator": validator_result.model_dump(),
         "transformer": transformer_result.model_dump(),
         "anomaly": anomaly_result.model_dump(),
@@ -421,7 +454,7 @@ if mode == "📄 CSV Pipeline":
         st.dataframe(df, use_container_width=True, height=240)
 
     if use_demo or uploaded_file:
-        if st.button("⚡ RUN PIPELINE — ALL 5 AGENTS →"):
+        if st.button("⚡ RUN PIPELINE — ALL 6 AGENTS →"):
             df = pd.read_csv("demo/sample_data.csv") if use_demo else pd.read_csv(uploaded_file)
             run_pipeline_ui(df)
 
@@ -780,7 +813,7 @@ elif mode == "🔌 Database Connectors":
 
     if df is not None and not df.empty:
         st.markdown('<div style="margin-top:8px;"></div>', unsafe_allow_html=True)
-        if st.button("⚡ RUN PIPELINE ON THIS DATA — ALL 5 AGENTS →"):
+        if st.button("⚡ RUN PIPELINE ON THIS DATA — ALL 6 AGENTS →"):
             run_pipeline_ui(df)
 
     st.markdown('</div>', unsafe_allow_html=True)
