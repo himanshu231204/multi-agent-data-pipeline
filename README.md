@@ -13,11 +13,17 @@
 
 [![Version](https://img.shields.io/badge/version-1.2.0-brightgreen?style=flat-square)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![Claude AI](https://img.shields.io/badge/Powered%20by-Claude%20AI-orange?style=flat-square)](https://anthropic.com)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://multi-agent-pipeline-demo.streamlit.app)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-red?style=flat-square&logo=streamlit&logoColor=white)](https://streamlit.io)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/harshitboots/multi-agent-data-pipeline?style=flat-square&color=yellow)](https://github.com/harshitboots/multi-agent-data-pipeline/stargazers)
 [![Forks](https://img.shields.io/github/forks/harshitboots/multi-agent-data-pipeline?style=flat-square&color=blue)](https://github.com/harshitboots/multi-agent-data-pipeline/network)
+
+<br/>
+
+## 🌐 [Try it Live → multi-agent-pipeline-demo.streamlit.app](https://multi-agent-pipeline-demo.streamlit.app)
+
+> No install. No API key needed in Basic mode. Open in browser and run.
 
 <br/>
 
