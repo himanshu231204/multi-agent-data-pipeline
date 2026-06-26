@@ -1,16 +1,17 @@
 <div align="center">
 
-<img src="britcore_logo.png" alt="Britcore.AI" width="300"/>
+<img src="logo.png" alt="Britcore.AI" width="300"/>
 
 <br/>
 <br/>
 
 # Multi-Agent Data Pipeline
 
-### 6 specialised AI agents that autonomously process any data source
+### 11 specialised AI agents that autonomously process any CSV, PDF or database in real time
 
 <br/>
 
+[![Version](https://img.shields.io/badge/version-1.2.0-brightgreen?style=flat-square)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Claude AI](https://img.shields.io/badge/Powered%20by-Claude%20AI-orange?style=flat-square)](https://anthropic.com)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-red?style=flat-square&logo=streamlit&logoColor=white)](https://streamlit.io)
@@ -20,26 +21,36 @@
 
 <br/>
 
-**[🚀 Quick Start](#quick-start) · [🎬 Demo](#demo) · [📖 How It Works](#how-it-works) · [🔌 Connectors](#data-sources) · [🤝 Contributing](#contributing)**
+**[🚀 Quick Start](#quick-start) · [⚡ What's New in v1.2](#whats-new-in-v12) · [🔀 Router Engine](#router-engine) · [📄 PDF Intelligence](#pdf-intelligence-pipeline) · [📡 Observability](#observability-dashboard) · [🔌 Connectors](#data-sources) · [🤝 Contributing](#contributing)**
 
 <br/>
 
-> *Upload a messy CSV, a complex PDF, or connect your database —*
-> *watch 6 AI agents autonomously clean, anonymise, validate, transform,*
-> *detect anomalies and summarise your data in real time.*
-
-<br/>
-
-<!-- SCREENSHOT: Take a full browser screenshot of your app homepage (dark theme, all 5 agent cards visible) and save as docs/images/hero.png -->
-<img src="docs/images/hero.png" alt="Multi-Agent Data Pipeline UI" width="900"/>
+> *Upload a messy CSV, drop in any PDF, or connect your database —*
+> *watch 11 AI agents autonomously clean, anonymise, validate, transform,*
+> *detect risks, extract entities and summarise your data in real time.*
 
 </div>
 
 ---
 
-## The Problem
+## What's New in v1.2
 
-![Architecture diagram](docs/images/arch.png)
+> **v1.2.0 — June 2026** · [Full changelog](#changelog)
+
+| Feature | Detail |
+|---------|--------|
+| **PDF Intelligence Report** | Download the full 5-section analysis as a formatted PDF — not JSON. Cover page, entities, risk badges, action items, executive summary |
+| **VPN / Proxy Block** | Automatic VPN and hosting IP detection via ip-api.com. Blocked users see a full-screen denial page |
+| **Anonymous Run Tracking** | SHA-256 IP + User-Agent fingerprint persisted to SQLite. 2 free runs survive page refresh — no signup required |
+| **Compare Runs Dashboard** | New first tab — side-by-side baseline vs router for both CSV and PDF pipelines. Cost savings in GBP and %, latency delta |
+| **PDF Mode Selector** | With Router (Haiku + Sonnet) vs Without Router (all Sonnet) toggle — mirrors CSV pipeline behaviour |
+| **Result Persistence** | PDF and CSV results survive navigation to the dashboard and back. Cleared on browser refresh only |
+| **Streamlit Cloud Ready** | Reads API key from `st.secrets` in cloud, `.env` locally — zero config change required |
+| **Dashboard Preview Card** | Hero section shows a locked dashboard preview until 2 runs are complete |
+
+---
+
+## The Problem
 
 Every data team has the same nightmare.
 
@@ -50,36 +61,65 @@ You get a CSV from a stakeholder. It has:
 - Column names that change every month
 - No documentation. No schema. No context.
 
-You spend **3 hours** writing cleaning scripts.
+You spend **3 hours** writing cleaning scripts.  
 Then the next file arrives and breaks everything.
+
+You get a PDF contract. Buried inside:
+- 47 action items scattered across 12 pages
+- PII data that shouldn't be in that document
+- Legal clauses that need flagging
+- Deadlines with no single owner
+
+You spend **2 hours** reading, highlighting, and writing a summary.
 
 **There has to be a better way.**
 
 ---
 
-### The Solution
+## The Solution
 
 Instead of writing rules, deploy agents.
 
-Each agent has a single job, its own reasoning, and structured output.
-They run sequentially, passing context to each other.
-The result is a complete data quality report — in seconds.
+Each agent has a single job, its own reasoning, and structured JSON output.  
+The Router Engine assigns the cheapest model that can handle each task.  
+Every run is traced, costed, and persisted for full observability.
 
-                  Your messy data
-                          ↓
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│   🧹 Cleaner    →   🔒 PII Anonymiser   →   🛡 Validator   │
-│                                                             │
-│   ⚡ Transformer  →  📡 Anomaly Detector → 📊 Summariser   │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-     Clean, anonymised data + Full quality report + Business insights
+```
+                    Your data (CSV · PDF · Database)
+                                  ↓
+                    ┌─────────────────────────┐
+                    │  🔒 Access Control Layer  │
+                    │  VPN block · IP fingerprint · Credit gate  │
+                    └─────────────┬───────────┘
+                                  ↓
+                    ┌─────────────────────────┐
+                    │   🧭 Router Engine        │  ← classifies task complexity
+                    │   With Router / Without   │  ← mode toggle
+                    └──────┬──────────┬────────┘
+                           │          │
+              ┌────────────▼──┐  ┌────▼──────────────┐
+              │ CSV Pipeline   │  │  PDF Pipeline      │
+              │ 6 Agents       │  │  5 Agents          │
+              │ Haiku + Sonnet │  │  Haiku → Sonnet    │
+              └────────┬───────┘  └────────┬───────────┘
+                       │                   │
+              ┌────────▼───────────────────▼──────┐
+              │  🔬 Observability & Telemetry       │
+              │  RunTracer · Cost GBP · Guardrails  │
+              └────────────────┬──────────────────┘
+                               │
+              ┌────────────────▼──────────────────┐
+              │  💾 SQLite  (Run History · anon_visitors)  │
+              └────────────────┬──────────────────┘
+                               │
+       ┌───────────────────────▼───────────────────────┐
+       │  📤 Output                                      │
+       │  Dashboard (Compare · Monitor · Cost · Guards)  │
+       │  PDF Intelligence Report Download               │
+       └────────────────────────────────────────────────┘
+```
 
 No config files. No rigid schemas. No rules to write and maintain.
-
-Just point it at your data and watch it work.
 
 ---
 
@@ -89,8 +129,6 @@ Just point it at your data and watch it work.
 
 - Python 3.10+
 - An Anthropic API key — get one free at [console.anthropic.com](https://console.anthropic.com)
-
----
 
 ### 1. Clone the repo
 
@@ -102,7 +140,7 @@ cd multi-agent-data-pipeline
 ### 2. Create virtual environment
 
 ```bash
-python3 -m venv venv
+python -m venv venv
 
 # Mac / Linux
 source venv/bin/activate
@@ -120,310 +158,279 @@ pip install -r requirements.txt
 ### 4. Add your API key
 
 ```bash
-cp .env.example .env
+# Create a .env file
+echo ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxx > .env
 ```
 
-Open `.env` and add your key:
-
-```bash
-ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxx
-```
-
-### 5. Run the CLI
-
-```bash
-python main.py demo/sample_data.csv
-```
-
-### 6. Run the UI
+### 5. Run the app
 
 ```bash
 streamlit run app.py
 ```
 
-Then open [http://localhost:8501](http://localhost:8501)
+Open [http://localhost:8501](http://localhost:8501)  
+Observability Dashboard: [http://localhost:8501/observability](http://localhost:8501/observability)
 
 ---
 
-### Install via pip *(coming soon)*
+## Router Engine
 
-```bash
-pip install multi-agent-data-pipeline
-multi-agent-pipeline demo/sample_data.csv
-```
+The Router Engine is the intelligence layer between your data and the agents. It inspects each agent's task complexity and assigns the cheapest model that can handle it — no quality drop.
 
----
+### Routing table
 
-<!-- SCREENSHOT: Take a screenshot of your terminal showing the pipeline running with all 5 agents completing successfully and the results table. Save as docs/images/cli_output.png -->
-<div align="center">
-<img src="docs/images/cli_output.png" alt="CLI Output" width="800"/>
-<br/>
-<em>The CLI in action — 5 agents processing 15 rows in real time</em>
-</div>
+| Agent | Without Router | With Router | Reason |
+|-------|---------------|-------------|--------|
+| Cleaner | Sonnet | **Haiku** | Mechanical formatting — no reasoning needed |
+| PII Anonymiser | Sonnet | **Haiku** | Pattern-based detection |
+| Transformer | Sonnet | **Haiku** | Column derivation — structured, deterministic |
+| Anomaly Detector | Sonnet | **Sonnet** | Statistical reasoning — needs quality |
+| Validator | Sonnet | **Sonnet** | Schema judgment — needs quality |
+| Summariser | Sonnet | **Sonnet** | Business insights — full quality required |
 
----
+### Cost per run (demo CSV, 15 rows)
 
-## Demo
+| Mode | Cost (GBP) | Latency |
+|------|-----------|---------|
+| Without Router — all Sonnet | ~£0.27 | ~14s |
+| **With Router — routed** | **~£0.08** | **~5s** |
+| **Saving** | **~70%** | **~63%** |
 
-### CSV Pipeline
-
-Upload any CSV — the agents find and fix everything automatically.
-
-<!-- SCREENSHOT: In the app, tick "Use demo dataset", click "RUN PIPELINE", wait for all 5 agents to complete, then screenshot the full results section showing the metrics row (5 green numbers) and the tabs below. Save as docs/images/csv_results.png -->
-<div align="center">
-<img src="docs/images/csv_results.png" alt="CSV Pipeline Results" width="900"/>
-<br/>
-<em>5 agents process 15 retail transactions — 7 anomalies detected, 91% completeness score</em>
-</div>
-
-<br/>
-
-### What the agents found in the demo dataset
-
-| Row | Issue | Agent |
-|-----|-------|-------|
-| TXN002 | Date format `2024/01/15` — inconsistent | 🧹 Cleaner |
-| TXN003 | Date format `15-01-2024` — inconsistent | 🧹 Cleaner |
-| TXN003 | Missing product name | 🧹 Cleaner |
-| TXN004 | Missing store ID | 🛡 Validator |
-| TXN007 | Price anomaly — £999.99 for 4 × £12.99 items | 📡 Anomaly |
-| TXN008 | Missing customer ID | 🛡 Validator |
-| TXN011 | Negative price — `-£5.00` | 📡 Anomaly |
-
-<br/>
-
-### PDF Intelligence
-
-Upload any PDF — contracts, reports, invoices, meeting notes.
-
-<!-- SCREENSHOT: In the app click "PDF Intelligence" tab, tick "Use demo PDF", click "RUN PDF PIPELINE", wait for all 5 agents, screenshot the results showing metrics row and tabs. Save as docs/images/pdf_results.png -->
-<div align="center">
-<<img src="docs/images/pdf_results_1.png" alt="PDF Intelligence Results" width="900"/>
-<br/>
-<img src="docs/images/pdf_results_2.png" alt="PDF Intelligence Detail" width="900"/>
-<br/>
-<em>PDF agents extract entities, detect GDPR risks, and pull action items from a quarterly report</em>
-</div>
-
-<br/>
-
-### Database Connectors
-
-Connect directly to your database — agents fetch a table and run the full pipeline.
-
-<!-- SCREENSHOT: In the app click "Database Connectors" tab, select "Azure Databricks" from the dropdown, screenshot the connection form. Save as docs/images/connectors.png -->
-<div align="center">
-<img src="docs/images/connectors.png" alt="Database Connectors" width="900"/>
-<br/>
-<img src="docs/images/connectors1.png" alt="Database Connectors Detail" width="900"/>
-<br/>
-<em>5 database connectors — Azure Databricks, Snowflake, PostgreSQL, MySQL, BigQuery</em>
-</div>
+Run both modes → the **Compare Runs** dashboard tab auto-populates with the full breakdown.
 
 ---
 
-## How It Works
+## CSV Agent Pipeline
 
-### Agent Design Philosophy
+Six specialised agents process your CSV in sequence. The Router assigns Haiku or Sonnet per agent based on task complexity.
 
-Each agent is a **specialised Claude AI instance** with:
-- A focused system prompt defining its exact role
-- A strict JSON output schema enforced by Pydantic
-- Graceful error handling with typed fallback responses
-- Context passing — each agent knows what the previous one found
-
-No LangChain. No bloated frameworks. Just clean Python and direct API calls.
-
----
-
-### The 6 CSV Pipeline Agents
-
-#### 🧹 Agent 1 — Cleaner
+#### 🧹 Agent 1 — Cleaner (Haiku)
 Identifies and fixes data quality issues before anything else runs.
 
-```python
-# What it finds
+```json
 {
-    "issues_fixed": [
-        "Inconsistent date formats — standardised to YYYY-MM-DD",
-        "Missing product names — flagged 1 row",
-        "Missing store IDs — flagged 1 row"
-    ],
-    "rows_affected": 6,
-    "cleaned_columns": ["date", "product_name", "store_id"]
+  "issues_fixed": [
+    "Inconsistent date formats — standardised to YYYY-MM-DD",
+    "Missing product names — flagged 1 row"
+  ],
+  "rows_affected": 6,
+  "cleaned_columns": ["date", "product_name", "store_id"]
 }
 ```
 
-#### 🔒 Agent 2 — PII Anonymiser
-Scans every row for personal data — emails, phone numbers, card numbers and
-postcodes — and masks it before any other agent (or any cloud LLM call) sees
-it.
+#### 🔒 Agent 2 — PII Anonymiser (Haiku)
+Scans every row for emails, phone numbers, card numbers and postcodes — masks before any downstream agent sees the data.
 
-```python
+```json
 {
-    "pii_found": [
-        "Row 4: email: 1 found",
-        "Row 9: phone: 1 found",
-        "Row 12: card_number: 1 found"
-    ],
-    "rows_affected": 3,
-    "pii_types_detected": ["email", "phone", "card_number"],
-    "anonymised_preview": "...,j***@***.com,***** ****56,**** **** **** 1234,..."
+  "pii_found": ["Row 4: email", "Row 9: phone", "Row 12: card_number"],
+  "rows_affected": 3,
+  "pii_types_detected": ["card_number", "email", "phone"],
+  "anonymised_preview": "j***@***.com · **** **** **** 1234"
 }
 ```
 
-#### 🛡 Agent 3 — Validator
+#### 🛡️ Agent 3 — Validator (Sonnet)
 Checks schema correctness, data types, constraints and completeness.
 
-```python
+```json
 {
-    "schema_ok": true,
-    "violations": [
-        "Missing customer_id in rows 8",
-        "Negative unit_price in row 11"
-    ],
-    "passed_checks": [
-        "All transaction IDs unique",
-        "Quantity values positive"
-    ],
-    "completeness_score": 91.1
+  "schema_ok": true,
+  "violations": ["Missing customer_id in row 8", "Negative unit_price in row 11"],
+  "passed_checks": ["All transaction IDs unique", "Quantity values positive"],
+  "completeness_score": 91.1
 }
 ```
 
-#### ⚡ Agent 4 — Transformer
-Standardises, normalises and derives new columns from existing data.
+#### ⚡ Agent 4 — Transformer (Haiku)
+Standardises, normalises and derives new columns.
 
-```python
+```json
 {
-    "transformations_applied": [
-        "Standardised all dates to ISO 8601",
-        "Normalised product names to title case"
-    ],
-    "new_columns": ["year", "month", "day_of_week", "price_band", "is_weekend"],
-    "rows_transformed": 15
+  "transformations_applied": ["Dates → ISO 8601", "Product names → title case"],
+  "new_columns": ["year", "month", "day_of_week", "price_band", "is_weekend"],
+  "rows_transformed": 15
 }
 ```
 
-#### 📡 Agent 5 — Anomaly Detector
+#### 📡 Agent 5 — Anomaly Detector (Sonnet)
 Finds statistical outliers, impossible values and suspicious patterns.
 
-```python
+```json
 {
-    "anomalies": [
-        "TXN007: total £999.99 — expected ~£51.96 for 4 × £12.99",
-        "TXN011: negative unit_price -£5.00 — impossible value"
-    ],
-    "anomaly_count": 7,
-    "anomaly_score": 8.5,
-    "flagged_rows": [7, 11]
+  "anomalies": ["TXN007: total £999.99 — expected ~£51.96", "TXN011: negative price"],
+  "anomaly_count": 7,
+  "anomaly_score": 8.5,
+  "flagged_rows": [7, 11]
 }
 ```
 
-#### 📊 Agent 6 — Summariser
-Produces a business-readable summary with key stats and recommendations.
+#### 📊 Agent 6 — Summariser (Sonnet)
+Business-readable summary with key stats and recommendations.
 
-```python
+```json
 {
-    "summary": "Dataset contains 15 retail transactions across 5 categories...",
-    "key_stats": {
-        "Total Revenue": "£413.56",
-        "Top Category": "Skincare",
-        "Date Range": "15–20 Jan 2024"
-    },
-    "recommendations": [
-        "Investigate TXN007 — possible data entry error",
-        "Standardise date format across all upstream systems"
-    ]
+  "summary": "Dataset contains 15 retail transactions across 5 categories...",
+  "key_stats": { "Total Revenue": "£413.56", "Top Category": "Skincare" },
+  "recommendations": ["Investigate TXN007 — possible data entry error"]
 }
 ```
 
 ---
 
-### The 5 PDF Intelligence Agents
+## PDF Intelligence Pipeline
 
-| Agent | Input | Output |
+Five sequential agents turn any PDF into structured intelligence. Upload a contract, report, invoice, or policy — get a full analysis in under 30 seconds.
+
+| Agent | Model | Output |
 |-------|-------|--------|
-| **📄 PDF Parser** | Raw PDF text | Document type, language, quality, key topics |
-| **🔍 Entity Extractor** | PDF text | People, orgs, dates, amounts, emails, locations |
-| **⚠️ Risk Detector** | PDF text | PII flags, GDPR risks, legal/financial red flags |
-| **✅ Action Extractor** | PDF text | Todos, decisions, deadlines, owners |
-| **📊 Summariser** | All agent context | Business summary + recommendations |
+| **📄 PDF Parser** | Haiku | Document type, language, quality score, key topics |
+| **🔍 Entity Extractor** | Haiku | People, organisations, locations, dates, amounts, emails |
+| **⚠️ Risk Detector** | Sonnet | PII flags, GDPR risks, legal/financial red flags, risk score |
+| **✅ Action Extractor** | Sonnet | Todos, decisions, deadlines, owners, priority actions |
+| **📊 PDF Summariser** | Sonnet | Executive summary, key stats, recommendations |
+
+### PDF Intelligence Report
+
+After the pipeline runs, download a branded **PDF report** with:
+
+- **Cover page** — document metadata, model used per agent, generation timestamp
+- **Section 1** — Document Overview (type, language, quality, topics)
+- **Section 2** — Entities Extracted (two-column layout per entity type)
+- **Section 3** — Risk Analysis (coloured risk badge, PII flag, compliance risks)
+- **Section 4** — Action Items & Decisions (priority actions in red, deadlines in amber)
+- **Section 5** — Executive Summary (full summary text, key stats, recommendations)
+
+The report uses navy/purple branding with per-section colour coding — ready to share directly with stakeholders.
+
+### PDF modes
+
+| Mode | Parser | Entity | Risk | Action | Summary |
+|------|--------|--------|------|--------|---------|
+| With Router | Haiku | Haiku | Sonnet | Sonnet | Sonnet |
+| Without Router | Sonnet | Sonnet | Sonnet | Sonnet | Sonnet |
 
 ---
 
-### Architecture
+## Observability Dashboard
 
+Every pipeline run is logged to `pipeline_runs.db` (SQLite, auto-created, gitignored).  
+Open the dashboard at [http://localhost:8501/observability](http://localhost:8501/observability).
+
+### 7 tabs
+
+| Tab | What you see |
+|-----|-------------|
+| **⚖️ Compare Runs** | Side-by-side baseline vs router — cost GBP, latency ms, parse success rate, savings summary |
+| **📡 Live Monitor** | Last run — agent waterfall with latency bars, cost per agent, full prompt + raw response inspector |
+| **📋 Run History** | All runs in a table — click any run to drill into per-agent spans |
+| **💰 Cost Analytics** | Spend over time, Haiku vs Sonnet breakdown, cost by mode |
+| **🎯 Agent Performance** | Reliability %, avg latency, avg cost, parse failure rate — per agent across all runs |
+| **🛡️ Guardrails Log** | Every guardrail event with severity, value vs threshold, action taken |
+| **⚙️ Settings** | Configure guardrail thresholds — budget cap, timeout, PII limits |
+
+### Compare Runs tab
+
+After running both **With Router** and **Without Router**:
+
+- Two cards side by side — coloured border (green = router, grey = baseline)
+- Per-agent span table with latency bar visualisation
+- Savings summary: cost difference in GBP, percentage saved, latency delta in ms
+- If only one run exists — full detail view + nudge to run the other mode
+
+### Guardrails
+
+```python
+from src.observability.guardrails import GuardrailEngine
+
+guardrails = GuardrailEngine(
+    budget_cap_gbp=0.50,     # stop run if cost exceeds this
+    agent_timeout_s=30,       # skip agent if it hangs
+    min_completeness=60.0,    # warn if validator score drops below this
+    max_pii_rows=0,           # warn on any PII detected
+    max_parse_failures=3,     # abort if this many agents fail JSON parse
+    anomaly_score_warn=9.0,   # warn if anomaly score exceeds this
+)
+```
+
+---
+
+## Access Control
+
+### VPN / Proxy Block
+
+All VPN, proxy and hosting IPs are blocked at startup.  
+Detection uses [ip-api.com](https://ip-api.com) — checks `proxy` and `hosting` fields.  
+Private/localhost IPs (`127.0.0.1`, `192.168.x.x`, `10.x.x.x`) are always allowed for local dev.
+
+### Free Access & BYOK
+
+No signup required for the first 2 runs.
+
+| Tier | Runs | How |
+|------|------|-----|
+| **Anonymous** | 2 free runs | Automatic — no account needed |
+| **Star bonus** | +1 run | Star this repo — verified live via GitHub API |
+| **BYOK** | Unlimited | Paste your own `sk-ant-...` key in the sidebar |
+| **GitHub** | Tracked | Enter your GitHub username for cross-session credit |
+
+**Anonymous run tracking** uses a SHA-256 hash of your IP address + User-Agent.  
+The hash is stored in SQLite — never the raw IP. Runs persist across page refreshes.
+
+**BYOK security:** your API key is stored in `st.session_state` only — never written to SQLite, files or logs. It disappears when you close the browser tab.
+
+---
+
+## Architecture
+
+```
 multi-agent-data-pipeline/
+├── app.py                        # Main Streamlit UI — router, BYOK, VPN block, PDF pipeline
+├── pages/
+│   └── observability.py          # 7-tab observability dashboard
 ├── src/
 │   ├── agents/
-│   │   ├── cleaner.py           # CSV cleaning agent
-│   │   ├── pii_anonymiser.py    # PII detection & anonymisation agent
-│   │   ├── validator.py         # CSV validation agent
-│   │   ├── transformer.py       # CSV transformation agent
-│   │   ├── anomaly.py           # Anomaly detection agent
-│   │   ├── summariser.py        # Summarisation agent
-│   │   ├── pdf_parser.py        # PDF parsing agent
-│   │   ├── entity_extractor.py  # Entity extraction agent
-│   │   ├── risk_detector.py     # Risk detection agent
-│   │   └── action_extractor.py  # Action item agent
+│   │   ├── cleaner.py            # CSV cleaning — Haiku
+│   │   ├── pii_anonymiser.py     # PII detection — Haiku
+│   │   ├── validator.py          # Schema validation — Sonnet
+│   │   ├── transformer.py        # Data transformation — Haiku
+│   │   ├── anomaly.py            # Anomaly detection — Sonnet
+│   │   ├── summariser.py         # Business summary — Sonnet
+│   │   ├── pdf_parser.py         # PDF structure analysis — Haiku
+│   │   ├── entity_extractor.py   # Named entity extraction — Haiku
+│   │   ├── risk_detector.py      # Risk and PII detection — Sonnet
+│   │   ├── action_extractor.py   # Action items and decisions — Sonnet
+│   │   └── (pdf summariser via summariser.py)
+│   ├── auth/
+│   │   ├── credits.py            # Credit tracking — anonymous (IP fingerprint) + GitHub + BYOK
+│   │   └── github_api.py         # GitHub API — star/fork verification
 │   ├── connectors/
-│   │   ├── databricks.py        # Azure Databricks
-│   │   ├── snowflake_conn.py    # Snowflake
-│   │   ├── postgres.py          # PostgreSQL
-│   │   ├── mysql.py             # MySQL
-│   │   └── bigquery.py          # BigQuery
-│   ├── models.py                # Pydantic schemas
-│   └── pipeline.py              # Orchestrator
+│   │   ├── databricks.py         # Azure Databricks
+│   │   ├── snowflake_conn.py     # Snowflake
+│   │   ├── postgres.py           # PostgreSQL
+│   │   ├── mysql.py              # MySQL
+│   │   ├── bigquery.py           # BigQuery
+│   │   └── duckdb_conn.py        # DuckDB
+│   ├── observability/
+│   │   ├── tracer.py             # RunTracer + AgentSpan — tokens, cost, latency, prompts
+│   │   ├── store.py              # SQLite persistence — runs, spans, guardrail events
+│   │   ├── guardrails.py         # GuardrailEngine — budget, timeout, PII, parse failures
+│   │   └── metrics.py            # Analytics queries — cost trend, agent performance
+│   ├── report_generator.py       # fpdf2 PDF report builder — 5-section branded output
+│   ├── cost_config.py            # Model pricing (GBP), token limits, timeouts
+│   ├── router.py                 # Router engine — assigns cheapest model per agent
+│   ├── models.py                 # Pydantic schemas — all agent result types
+│   └── pipeline.py               # CSV pipeline orchestrator
 ├── demo/
-│   ├── sample_data.csv          # Demo CSV with intentional issues
-│   └── sample_report.pdf        # Demo PDF quarterly report
-├── contrib/
-│   ├── azure/                   # Azure deployment guide
-│   ├── databricks/              # Databricks implementation
-│   ├── aws/                     # AWS Lambda implementation
-│   └── docker/                  # Docker deployment
+│   ├── sample_data.csv           # Demo CSV with intentional data quality issues
+│   └── sample_report.pdf         # Demo PDF for the PDF pipeline
+├── .streamlit/
+│   └── config.toml               # Dark theme, CORS settings for cloud deployment
 ├── tests/
-│   └── test_pipeline.py         # 25 passing tests
-├── app.py                       # Streamlit UI
-├── main.py                      # CLI entrypoint
-└── requirements.txt
-
-
----
-
-### Sequence Flow
-
-User uploads CSV / PDF / connects DB
-↓
-Pipeline Orchestrator
-↓
-┌─────────────────────┐
-│   Agent 1: Cleaner  │ ──→ CleanerResult (Pydantic)
-└─────────────────────┘
-↓
-┌───────────────────────────┐
-│ Agent 2: PII Anonymiser   │ ──→ PIIAnonymiserResult (Pydantic)
-└───────────────────────────┘
-↓
-┌──────────────────────┐
-│  Agent 3: Validator  │ ──→ ValidatorResult (Pydantic)
-└──────────────────────┘
-↓
-┌────────────────────────┐
-│ Agent 4: Transformer   │ ──→ TransformerResult (Pydantic)
-└────────────────────────┘
-↓
-┌──────────────────────────────┐
-│ Agent 5: Anomaly Detector    │ ──→ AnomalyResult (Pydantic)
-└──────────────────────────────┘
-↓
-┌─────────────────────────────────────────┐
-│ Agent 6: Summariser (with full context) │ ──→ SummariserResult
-└─────────────────────────────────────────┘
-↓
-PipelineResult (combined)
-↓
-CLI table + JSON export + UI display
+│   └── test_pipeline.py          # 16 passing tests
+├── requirements.txt
+└── .env.example
+```
 
 ---
 
@@ -431,7 +438,7 @@ CLI table + JSON export + UI display
 
 ### 📄 CSV Upload
 
-Drop any CSV file — no schema required. The agents infer structure, detect issues and process automatically.
+Drop any CSV — no schema required. Agents infer structure and process automatically.
 
 ```bash
 # CLI
@@ -441,36 +448,27 @@ python main.py your_data.csv
 python main.py your_data.csv --output results.json
 ```
 
-Tested with:
-- Retail transaction data
-- Financial ledgers
-- HR records
-- IoT sensor readings
-- Marketing campaign data
-- Any flat file CSV
+Tested with: retail transactions · financial ledgers · HR records · IoT sensor data · marketing CSVs
 
 ---
 
 ### 📑 PDF Intelligence
 
-Upload any PDF document. Agents extract structured information automatically.
+Upload any PDF. Best results with:
 
-Best results with:
 - Quarterly / annual reports
 - Contracts and legal documents
 - Invoices and purchase orders
 - Meeting minutes and notes
-- Research papers
-- HR documents and policies
+- Research papers · HR policies
 
 ---
 
 ### 🔌 Database Connectors
 
-Connect directly to your database. Agents fetch any table and run the full pipeline.
+Connect directly to your database — agents fetch any table and run the full pipeline.
 
 #### Azure Databricks
-
 ```python
 from src.connectors.databricks import fetch_table
 
@@ -483,97 +481,83 @@ df = fetch_table(
 ```
 
 #### Snowflake
-
 ```python
 from src.connectors.snowflake_conn import fetch_table
 
 df = fetch_table(
     account="xy12345.eu-west-1",
-    user="my_user",
-    password="my_password",
-    database="MY_DATABASE",
-    schema="PUBLIC",
-    table="MY_TABLE"
+    user="my_user", password="my_password",
+    database="MY_DATABASE", schema="PUBLIC", table="MY_TABLE"
 )
 ```
 
 #### PostgreSQL
-
 ```python
 from src.connectors.postgres import fetch_table
 
-df = fetch_table(
-    host="localhost",
-    port=5432,
-    database="my_database",
-    user="postgres",
-    password="my_password",
-    table="my_table"
-)
+df = fetch_table(host="localhost", port=5432, database="my_db",
+                 user="postgres", password="my_password", table="my_table")
 ```
 
 #### MySQL
-
 ```python
 from src.connectors.mysql import fetch_table
 
-df = fetch_table(
-    host="localhost",
-    port=3306,
-    database="my_database",
-    user="root",
-    password="my_password",
-    table="my_table"
-)
+df = fetch_table(host="localhost", port=3306, database="my_db",
+                 user="root", password="my_password", table="my_table")
 ```
 
 #### BigQuery
-
 ```python
 from src.connectors.bigquery import fetch_table
 
-df = fetch_table(
-    project_id="my-gcp-project",
-    credentials_json=credentials_dict,
-    dataset="my_dataset",
-    table="my_table"
-)
+df = fetch_table(project_id="my-gcp-project",
+                 credentials_json=credentials_dict,
+                 dataset="my_dataset", table="my_table")
 ```
 
 #### DuckDB
-
 ```python
 from src.connectors.duckdb_conn import fetch_table
 
-df = fetch_table(
-    database="/path/to/my_database.duckdb",
-    table="my_table"
-)
+df = fetch_table(database="/path/to/database.duckdb", table="my_table")
 ```
-
----
 
 ### Connector Status
 
-| Database | Auth Method | Fetch | Pipeline | Status |
-|----------|------------|-------|----------|--------|
-| Azure Databricks | PAT Token | ✅ | ✅ | Stable |
-| Snowflake | User/Pass | ✅ | ✅ | Stable |
-| PostgreSQL | User/Pass | ✅ | ✅ | Stable |
-| MySQL | User/Pass | ✅ | ✅ | Stable |
-| BigQuery | Service Account JSON | ✅ | ✅ | Stable |
-| DuckDB | File path | ✅ | ✅ | Stable |
-| MongoDB | — | 🔜 | 🔜 | Planned |
-| Redshift | — | 🔜 | 🔜 | Planned |
-| Microsoft Fabric | — | 🔜 | 🔜 | Planned |
-
-> Want to add a connector? See [Contributing](#contributing)
+| Database | Status |
+|----------|--------|
+| Azure Databricks | ✅ Stable |
+| Snowflake | ✅ Stable |
+| PostgreSQL | ✅ Stable |
+| MySQL | ✅ Stable |
+| BigQuery | ✅ Stable |
+| DuckDB | ✅ Stable |
+| MongoDB | 🔜 Planned |
+| Redshift | 🔜 Planned |
+| Microsoft Fabric | 🔜 Planned |
 
 ---
 
 ## Deploy to Production
 
-This pipeline runs locally out of the box. For production deployment it's compatible with every major cloud platform.
+### ☁️ Streamlit Community Cloud (Recommended — Free)
+
+The fastest way to get a public URL.
+
+1. Push this repo to GitHub (public or private)
+2. Go to [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub
+3. Click **New app** and select this repository
+4. Set **Main file path** to `app.py`
+5. Click **Advanced settings → Secrets** and paste:
+
+```toml
+ANTHROPIC_API_KEY = "sk-ant-xxxxxxxxxxxxxxxx"
+```
+
+6. Click **Deploy** — live URL in under 2 minutes
+
+The app automatically reads from `st.secrets` in cloud and `.env` locally — no code changes needed.
 
 ---
 
@@ -581,15 +565,11 @@ This pipeline runs locally out of the box. For production deployment it's compat
 
 ```dockerfile
 FROM python:3.12-slim
-
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-
 COPY . .
-
 EXPOSE 8501
-
 CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
 ```
 
@@ -602,7 +582,7 @@ docker run -p 8501:8501 -e ANTHROPIC_API_KEY=sk-ant-... multi-agent-pipeline
 
 ### ☁️ Azure
 
-**Option 1 — Azure Container Apps**
+**Container Apps**
 ```bash
 az containerapp create \
   --name multi-agent-pipeline \
@@ -611,25 +591,18 @@ az containerapp create \
   --env-vars ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-**Option 2 — Azure Databricks Job**
-```python
-# Run as a Databricks notebook job
-# Point pipeline at any Unity Catalog table
-# Schedule via ADF pipeline trigger
-```
-
-**Option 3 — Azure Functions**
-```python
-# Trigger on Blob Storage upload
-# Process CSV and store results to ADLS
-# Integrate with ADF for orchestration
+**App Service**
+```bash
+az webapp create --name multi-agent-pipeline --resource-group my-rg --plan my-plan
+az webapp config appsettings set --name multi-agent-pipeline \
+  --settings ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ---
 
 ### ☁️ AWS
 
-**Option 1 — AWS Lambda + S3**
+**Lambda + S3 trigger**
 ```python
 import boto3
 from src.pipeline import run_pipeline
@@ -637,23 +610,13 @@ from src.pipeline import run_pipeline
 def lambda_handler(event, context):
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = event['Records'][0]['s3']['object']['key']
-    # Download CSV from S3
-    # Run pipeline
-    # Store results back to S3
-```
-
-**Option 2 — ECS + Fargate**
-```bash
-# Deploy as a containerised service
-# Auto-scale based on queue depth
-# Integrate with SQS for async processing
+    # Download CSV from S3, run pipeline, push results back
 ```
 
 ---
 
-### ☁️ GCP
+### ☁️ GCP — Cloud Run
 
-**Cloud Run**
 ```bash
 gcloud run deploy multi-agent-pipeline \
   --image gcr.io/my-project/multi-agent-pipeline \
@@ -665,20 +628,8 @@ gcloud run deploy multi-agent-pipeline \
 
 ### 🚀 Render / Railway (Free Tier)
 
-One-click deploy — zero infrastructure setup.
-
-**Render:**
-1. Fork this repo
-2. Connect to Render
-3. Set `ANTHROPIC_API_KEY` environment variable
-4. Deploy — live URL in 2 minutes
-
-**Railway:**
-```bash
-railway login
-railway init
-railway up
-```
+**Render:** Fork → Connect → Set `ANTHROPIC_API_KEY` → Deploy  
+**Railway:** `railway login && railway init && railway up`
 
 ---
 
@@ -686,184 +637,179 @@ railway up
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | ✅ Yes | Your Anthropic API key |
+| `ANTHROPIC_API_KEY` | ✅ Yes | Anthropic API key (or use BYOK in the UI) |
 | `DATABRICKS_HOST` | Optional | Databricks workspace URL |
 | `DATABRICKS_TOKEN` | Optional | Databricks PAT token |
 | `SNOWFLAKE_ACCOUNT` | Optional | Snowflake account identifier |
 | `POSTGRES_HOST` | Optional | PostgreSQL host |
 | `MYSQL_HOST` | Optional | MySQL host |
 
-> See `.env.example` for the full list
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| AI — complex agents | Claude Sonnet (`claude-sonnet-4-6`) |
+| AI — simple agents | Claude Haiku (`claude-haiku-4-5-20251001`) |
+| Router Engine | Custom — `src/router.py` |
+| PDF Report | fpdf2 — custom branded multi-section layout |
+| Language | Python 3.10+ |
+| Data | Pandas, PyPDF2 |
+| Validation | Pydantic v2 |
+| UI | Streamlit 1.58 |
+| Persistence | SQLite (`pipeline_runs.db`) |
+| Access Control | ip-api.com (VPN detection), SHA-256 fingerprinting |
+| Connectors | Databricks SDK, Snowflake, psycopg2, mysql-connector, BigQuery, DuckDB |
+| Testing | pytest (16 passing) |
 
 ---
 
-### Community Cloud Implementations
+## Changelog
 
-See the `contrib/` folder for community-contributed cloud implementations:
+### v1.2.0 — June 2026
 
-| Folder | Contents |
-|--------|---------|
-| `contrib/azure/` | ADF trigger + Databricks job implementation |
-| `contrib/databricks/` | Full Databricks notebook implementation |
-| `contrib/aws/` | Lambda + S3 trigger implementation |
-| `contrib/docker/` | Production Docker + compose setup |
+**New**
+- PDF Intelligence Report — download full 5-section analysis as a formatted PDF (fpdf2)
+- VPN / proxy blocking — ip-api.com detection, full-screen denial page
+- Anonymous run tracking — SHA-256 IP+UserAgent fingerprint, persisted to SQLite `anon_visitors` table across page refreshes
+- Compare Runs dashboard tab — side-by-side baseline vs router for CSV and PDF, savings in GBP and %
+- PDF mode selector — With Router (Haiku+Sonnet mix) vs Without Router (all Sonnet)
+- Result persistence — CSV and PDF results survive navigation until browser refresh
+- Dashboard preview card in hero — locked until 2 runs complete
+- Streamlit Cloud secrets loader — reads `ANTHROPIC_API_KEY` from `st.secrets` automatically
 
-> These are contributed by the community. Want to add yours? See [Contributing](#contributing)
+**Fixed**
+- fpdf2 cursor position bug — all `multi_cell` calls now use explicit widths and `set_x()` anchoring
+- fpdf2 Latin-1 encoding — `_safe()` sanitiser replaces em dashes, smart quotes, bullets before render
+- `NameError: safe_mode` — moved variable definition before `try` block
+- `st.progress()` — fixed float vs int (Streamlit 1.58 requires 0.0–1.0)
+- HTML entities in tab labels — replaced with real emoji characters
+- PDF result display — moved outside `if pdf_file:` guard so results persist after navigation
+
+**Changed**
+- Comparison panel replaced with redirect CTA — cleaner homepage, dashboard is the comparison surface
+- Dashboard light theme — white cards, sky-blue accents, improved readability
+- `.gitignore` updated — `*.db`, `venv_win/`, `*:Zone.Identifier` excluded
+
+---
+
+### v1.1.0
+
+- Router Engine — Haiku for simple tasks, Sonnet for complex
+- Parallel Wave 1 execution — 63% latency reduction
+- Observability dashboard — 6 tabs, SQLite persistence
+- BYOK — bring your own Anthropic API key
+- GitHub credit system — star bonus run
+
+---
+
+### v1.0.0
+
+- CSV pipeline — 6 agents (Cleaner, PII, Validator, Transformer, Anomaly, Summariser)
+- PDF pipeline — 5 agents (Parser, Entity, Risk, Action, Summariser)
+- Database connectors — Databricks, Snowflake, PostgreSQL, MySQL, BigQuery, DuckDB
+- Streamlit UI — dark theme
+- CLI entrypoint
+- 16 unit tests
+
+---
+
+## Roadmap
+
+- [x] CSV pipeline — 6 agents
+- [x] PDF intelligence — 5 agents
+- [x] Database connectors — 6 databases
+- [x] Router Engine — Haiku / Sonnet routing
+- [x] Observability dashboard — traces, cost, guardrails
+- [x] Compare Runs tab
+- [x] BYOK + GitHub credit system
+- [x] VPN blocking
+- [x] Anonymous run tracking (IP fingerprint)
+- [x] PDF Intelligence Report download
+- [x] Streamlit Cloud deployment
+- [ ] `pip install multi-agent-data-pipeline`
+- [ ] MongoDB connector
+- [ ] Redshift connector
+- [ ] Microsoft Fabric connector
+- [ ] REST API — FastAPI wrapper
+- [ ] Agent memory — learn from past runs
+- [ ] Webhook support — trigger via HTTP
+- [ ] Docker image on Docker Hub
+- [ ] GitHub Actions CI/CD
 
 ---
 
 ## Contributing
 
-This repo is built for the community. Every contribution makes it better for thousands of data engineers.
-
-**Current contributors:** 1 — be the second.
-
----
-
 ### Ways to Contribute
 
 #### 🔌 Add a Database Connector
-We want to support every major database. Next targets:
 
-| Database | Difficulty | Issue |
-|----------|-----------|-------|
-| MongoDB | Medium | #1 |
-| Redshift | Easy | #2 |
-| Microsoft Fabric | Medium | #4 |
-| Elasticsearch | Hard | #5 |
-
-#### ☁️ Cloud Implementations
-Deploy this on your cloud and contribute the implementation:
-
-- `contrib/azure/` — ADF pipeline trigger
-- `contrib/databricks/` — Full Databricks notebook
-- `contrib/aws/` — Lambda + S3 trigger
-- `contrib/docker/` — Production Docker setup
-- `contrib/gcp/` — Cloud Run deployment
+| Database | Difficulty |
+|----------|-----------|
+| MongoDB | Medium |
+| Redshift | Easy |
+| Microsoft Fabric | Medium |
+| Elasticsearch | Hard |
 
 #### 🤖 New Agents
-Ideas for new agents:
 
+Ideas for new agents:
 - **Schema Inferencer** — auto-detect and document schema
 - **Data Lineage Tracker** — track where each column came from
 - **Duplicate Detector** — find near-duplicate records
-- **Language Translator** — translate non-English data fields
+- **Language Translator** — translate non-English fields
 
-#### 🌍 Language Wrappers
-Wrap the CLI for other languages:
-
-- R package
-- Node.js SDK
-- Julia package
-
-#### 📝 Documentation & Examples
-- Add example notebooks
-- Write tutorials
-- Translate docs
-
----
-
-### Getting Started
-
-```bash
-# 1. Fork the repo on GitHub
-
-# 2. Clone your fork
-git clone https://github.com/YOUR_USERNAME/multi-agent-data-pipeline.git
-cd multi-agent-data-pipeline
-
-# 3. Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# 4. Install dependencies
-pip install -r requirements.txt
-
-# 5. Create a branch
-git checkout -b feature/mongodb-connector
-
-# 6. Make your changes
-
-# 7. Run tests — all must pass
-pytest tests/ -v
-
-# 8. Push and open a PR
-git push origin feature/mongodb-connector
-```
-
----
-
-### Contribution Guidelines
-
-- One feature per PR
-- All tests must pass
-- Add tests for new features
-- Follow existing code style — each agent has the same structure
-- Update README if adding a connector or agent
-
----
-
-### Adding a New Connector
-
-Follow this pattern — every connector has the same 3 functions:
+#### Adding a Connector
 
 ```python
 # src/connectors/your_db.py
 
-def connect(host: str, port: int, database: str, user: str, password: str):
-    # Return a connection object
-    pass
-
-def list_tables(host: str, ...) -> list:
-    # Return list of table names
-    pass
-
-def fetch_table(host: str, ..., table: str, limit: int = 1000) -> pd.DataFrame:
-    # Return a pandas DataFrame
-    pass
+def connect(host: str, port: int, database: str, user: str, password: str): ...
+def list_tables(host: str, ...) -> list: ...
+def fetch_table(host: str, ..., table: str, limit: int = 1000) -> pd.DataFrame: ...
 ```
 
-Then add it to the UI in `app.py` under the Database Connectors section.
-
----
-
-### Adding a New Agent
-
-Follow this pattern — every agent has the same structure:
+#### Adding an Agent
 
 ```python
 # src/agents/your_agent.py
 
 SYSTEM_PROMPT = """You are a [role] agent.
-Respond ONLY with valid JSON. No markdown. No explanation.
-JSON format: { ... }"""
+Respond ONLY with valid JSON. No markdown. No explanation."""
 
-class YourAgentResult:
-    def __init__(self, **kwargs): ...
-    def model_dump(self): return self.__dict__
-
-def run(data: str, context: int) -> YourAgentResult:
-    response = client.messages.create(...)
-    # parse and return typed result
+def run(csv_preview: str, total_rows: int,
+        model: str = None, span=None, api_key: str = None) -> YourAgentResult:
+    _client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
+    response = _client.messages.create(model=model, ...)
+    if span:
+        span.finish(input_tokens=response.usage.input_tokens,
+                    output_tokens=response.usage.output_tokens,
+                    model=model, raw_response=..., parsed_output=..., parse_ok=True)
+    return result
 ```
 
----
+### Getting Started
 
-### Recognition
+```bash
+git clone https://github.com/YOUR_USERNAME/multi-agent-data-pipeline.git
+cd multi-agent-data-pipeline
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+git checkout -b feature/your-feature
+# make changes
+pytest tests/ -v
+git push origin feature/your-feature
+# open a PR
+```
 
-All contributors are:
-- Listed in the README contributors section
-- Credited in the release notes
-- Mentioned in the Medium article series
+### Contribution Guidelines
 
----
-
-### Contributors
-
-| Avatar | Name | Contribution |
-|--------|------|-------------|
-| 👤 | [Harshit Tripathi](https://github.com/harshitboots) | Creator & maintainer |
-| 👤 | *Your name here* | *Your contribution* |
+- One feature per PR
+- All 16 tests must pass
+- Follow existing agent structure — same `run()` signature, same `span.finish()` pattern
+- Update README if adding a connector or agent
 
 ---
 
@@ -872,81 +818,23 @@ All contributors are:
 ```bash
 pytest tests/ -v
 ```
-tests/test_pipeline.py::TestModels::test_cleaner_result_creation PASSED
-tests/test_pipeline.py::TestModels::test_validator_result_creation PASSED
-tests/test_pipeline.py::TestModels::test_transformer_result_creation PASSED
-tests/test_pipeline.py::TestModels::test_anomaly_result_creation PASSED
-tests/test_pipeline.py::TestModels::test_summariser_result_creation PASSED
-tests/test_pipeline.py::TestModels::test_pii_anonymiser_result_creation PASSED
-tests/test_pipeline.py::TestModels::test_pipeline_result_creation PASSED
-tests/test_pipeline.py::TestCSVLoading::test_csv_loads_correctly PASSED
-tests/test_pipeline.py::TestCSVLoading::test_csv_preview_generation PASSED
-tests/test_pipeline.py::TestCSVLoading::test_demo_csv_exists PASSED
-tests/test_pipeline.py::TestCSVLoading::test_demo_csv_has_correct_columns PASSED
-tests/test_pipeline.py::TestCSVLoading::test_demo_csv_has_rows PASSED
-tests/test_pipeline.py::TestPIIAnonymiser::test_anonymise_text_masks_email PASSED
-tests/test_pipeline.py::TestPIIAnonymiser::test_anonymise_text_masks_card_number PASSED
-tests/test_pipeline.py::TestPIIAnonymiser::test_anonymise_text_masks_phone PASSED
-tests/test_pipeline.py::TestPIIAnonymiser::test_anonymise_text_does_not_flag_iso_dates_as_phone PASSED
-tests/test_pipeline.py::TestPIIAnonymiser::test_anonymise_text_no_pii PASSED
-tests/test_pipeline.py::TestPIIAnonymiser::test_run_detects_and_masks_pii PASSED
-tests/test_pipeline.py::TestPIIAnonymiser::test_run_demo_csv_has_no_false_positives PASSED
-... (plus DuckDB connector, PDF and environment tests)
-25 passed in 0.6s
 
-
----
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| AI | Anthropic Claude (claude-sonnet-4-5) |
-| Language | Python 3.12 |
-| Data | Pandas, PyPDF |
-| Validation | Pydantic v2 |
-| CLI | Typer + Rich |
-| UI | Streamlit |
-| Connectors | Databricks SDK, Snowflake, psycopg2, mysql-connector, BigQuery |
-| Testing | pytest |
-| Packaging | pyproject.toml |
-
----
-
-## Roadmap
-
-- [x] CSV pipeline — 5 agents
-- [x] PDF intelligence — 5 agents
-- [x] Database connectors — 5 databases
-- [x] Streamlit UI — dark theme
-- [x] CLI entrypoint
-- [x] JSON export
-- [ ] pip package — `pip install multi-agent-data-pipeline`
-- [ ] MongoDB connector
-- [ ] Redshift connector
-- [x] DuckDB connector
-- [ ] Microsoft Fabric connector
-- [ ] Async parallel agent execution
-- [ ] Agent memory — learn from past runs
-- [ ] Webhook support — trigger via HTTP
-- [ ] REST API — FastAPI wrapper
-- [ ] Docker image on Docker Hub
-- [ ] GitHub Actions CI/CD
+```
+16 passed in 0.6s
+```
 
 ---
 
 ## About
 
-Built by **Harshit Tripathi** — Lead Data Engineer
+Built by **Harshit Tripathi** — Founder, Britcore AI · Lead Data Engineer
 
-- Creator of **ATLAS Knowledge Graph** — AI-powered data lineage and discovery platform on Azure Databricks
-- 10 years of experience across Azure, Databricks, PySpark, Unity Catalog, Microsoft Fabric
+- Creator of **ATLAS Knowledge Graph** — AI-powered data lineage on Azure Databricks
+- 10 years across Azure, Databricks, PySpark, Unity Catalog, Microsoft Fabric
 - Databricks Certified Professional
-- Cross-industry background — retail, aerospace, healthcare
+- Cross-industry: retail, aerospace, healthcare
 
-This project is part of the **Britcore.AI open source initiative** — building practical AI tools for data engineers.
+This project is part of the **Britcore.AI open source initiative** — practical AI tools for data engineers.
 
 | | |
 |--|--|
@@ -958,24 +846,20 @@ This project is part of the **Britcore.AI open source initiative** — building 
 
 ## License
 
-MIT License — free to use, modify and distribute.
-
-See [LICENSE](LICENSE) for full terms.
+MIT License — free to use, modify and distribute. See [LICENSE](LICENSE) for full terms.
 
 ---
 
 <div align="center">
 
-<img src="britcore_logo.png" alt="Britcore.AI" width="200"/>
-
-<br/>
 <br/>
 
 ### If this tool saved you time or taught you something new
 
 # ⭐ Star the repo
 
-*It takes 2 seconds and helps thousands of data engineers find this tool.*
+*It takes 2 seconds and helps thousands of data engineers find this tool.*  
+*You also unlock a bonus free run on the live app.*
 
 <br/>
 
@@ -986,6 +870,3 @@ See [LICENSE](LICENSE) for full terms.
 **Built with Claude AI · Powered by Britcore.AI · Made with ❤️ for the data engineering community**
 
 </div>
-
-
-
