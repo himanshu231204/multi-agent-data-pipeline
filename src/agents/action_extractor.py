@@ -5,8 +5,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-
 SYSTEM_PROMPT = """You are an action item extraction agent.
 Your job is to extract all action items, decisions, deadlines, and follow-ups from document text.
 You must respond ONLY with valid JSON. No explanation, no markdown, no code fences.
@@ -34,19 +32,15 @@ class ActionExtractorResult:
     def model_dump(self):
         return self.__dict__
 
-def run(text_preview: str, total_pages: int) -> ActionExtractorResult:
-    print("[Action Extractor Agent] Starting...")
-
-    response = client.messages.create(
-        model="claude-sonnet-4-5",
+def run(text_preview: str, total_pages: int, model: str = "claude-sonnet-4-6", api_key: str = None, span=None) -> ActionExtractorResult:
+    print(f"[Action Extractor Agent] Starting... model={model}")
+    _client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
+    user_msg = f"Extract all action items from this document ({total_pages} pages):\n\n{text_preview}"
+    response = _client.messages.create(
+        model=model,
         max_tokens=1000,
         system=SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": f"Extract all action items from this document ({total_pages} pages):\n\n{text_preview}"
-            }
-        ]
+        messages=[{"role": "user", "content": user_msg}]
     )
 
     raw = response.content[0].text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
@@ -54,11 +48,17 @@ def run(text_preview: str, total_pages: int) -> ActionExtractorResult:
     try:
         data = json.loads(raw)
         result = ActionExtractorResult(**data)
+        if span:
+            span.finish(input_tokens=response.usage.input_tokens,
+                        output_tokens=response.usage.output_tokens,
+                        model=model, raw_response=raw,
+                        parsed_output=str(result.model_dump()), parse_ok=True)
         print(f"[Action Extractor Agent] Done — {result.total_actions} actions found")
         return result
     except Exception as e:
-        print(f"[Action Extractor Agent] Error: {e}")
-        return ActionExtractorResult(
-            action_items=["Could not parse response"],
-            total_actions=0
-        )
+        if span:
+            span.finish(input_tokens=getattr(response.usage, 'input_tokens', 0),
+                        output_tokens=getattr(response.usage, 'output_tokens', 0),
+                        model=model, raw_response=raw,
+                        parsed_output="", parse_ok=False, error_message=str(e))
+        return ActionExtractorResult(action_items=["Could not parse response"], total_actions=0)

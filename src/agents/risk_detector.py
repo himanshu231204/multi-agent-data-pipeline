@@ -36,19 +36,16 @@ class RiskDetectorResult:
     def model_dump(self):
         return self.__dict__
 
-def run(text_preview: str, total_pages: int) -> RiskDetectorResult:
-    print("[Risk Detector Agent] Starting...")
-
-    response = client.messages.create(
-        model="claude-sonnet-4-5",
+def run(text_preview: str, total_pages: int, model: str = "claude-sonnet-4-6", api_key: str = None, span=None) -> RiskDetectorResult:
+    print(f"[Risk Detector Agent] Starting... model={model}")
+    import os
+    _client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
+    user_msg = f"Detect risks in this document ({total_pages} pages):\n\n{text_preview}"
+    response = _client.messages.create(
+        model=model,
         max_tokens=1000,
         system=SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": f"Detect risks in this document ({total_pages} pages):\n\n{text_preview}"
-            }
-        ]
+        messages=[{"role": "user", "content": user_msg}]
     )
 
     raw = response.content[0].text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
@@ -56,13 +53,18 @@ def run(text_preview: str, total_pages: int) -> RiskDetectorResult:
     try:
         data = json.loads(raw)
         result = RiskDetectorResult(**data)
-        print(f"[Risk Detector Agent] Done — risk level: {result.risk_level}, score: {result.overall_risk_score}/10")
+        if span:
+            span.finish(input_tokens=response.usage.input_tokens,
+                        output_tokens=response.usage.output_tokens,
+                        model=model, raw_response=raw,
+                        parsed_output=str(result.model_dump()), parse_ok=True)
+        print(f"[Risk Detector Agent] Done — {result.risk_level}, {result.overall_risk_score}/10")
         return result
     except Exception as e:
-        print(f"[Risk Detector Agent] Error: {e}")
-        return RiskDetectorResult(
-            pii_detected=False,
-            overall_risk_score=0.0,
-            risk_level="unknown",
-            recommendations=["Could not parse response"]
-        )
+        if span:
+            span.finish(input_tokens=getattr(response.usage, 'input_tokens', 0),
+                        output_tokens=getattr(response.usage, 'output_tokens', 0),
+                        model=model, raw_response=raw,
+                        parsed_output="", parse_ok=False, error_message=str(e))
+        return RiskDetectorResult(pii_detected=False, overall_risk_score=0.0,
+                                  risk_level="unknown", recommendations=["Could not parse response"])

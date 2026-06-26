@@ -3,10 +3,9 @@ import json
 from anthropic import Anthropic
 from dotenv import load_dotenv
 from src.models import SummariserResult
+from src.cost_config import MODELS, AGENT_MAX_TOKENS
 
 load_dotenv()
-
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 SYSTEM_PROMPT = """You are a data summarisation agent.
 Your job is to produce a business-readable summary of CSV data with key statistics and actionable recommendations.
@@ -22,32 +21,35 @@ JSON format:
     "recommendations": ["recommendation 1", "recommendation 2"]
 }"""
 
-def run(csv_preview: str, total_rows: int, context: str = "") -> SummariserResult:
-    print("[Summariser Agent] Starting...")
 
-    response = client.messages.create(
-        model="claude-sonnet-4-5",
-        max_tokens=1000,
-        system=SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": f"Summarise this CSV data ({total_rows} total rows):\n\n{csv_preview}\n\nContext from other agents:\n{context}"
-            }
-        ]
-    )
-
-    raw = response.content[0].text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+def run(csv_preview: str, total_rows: int, context: str = "",
+        model: str = None, span=None, api_key: str = None) -> SummariserResult:
+    if model is None:
+        model = MODELS["quality"]
+    client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
+    user_msg = f"Summarise this dataset ({total_rows} total rows).\n\nAgent findings:\n{context}"
 
     try:
+        response = client.messages.create(
+            model=model,
+            max_tokens=AGENT_MAX_TOKENS["summariser"],
+            system=SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_msg}]
+        )
+        raw = response.content[0].text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
         data = json.loads(raw)
         result = SummariserResult(**data)
-        print(f"[Summariser Agent] Done — {len(result.recommendations)} recommendations generated")
+        if span:
+            span.finish(
+                input_tokens=response.usage.input_tokens,
+                output_tokens=response.usage.output_tokens,
+                model=model, raw_response=raw,
+                parsed_output=str(result.model_dump()), parse_ok=True
+            )
         return result
     except Exception as e:
-        print(f"[Summariser Agent] Error parsing response: {e}")
-        return SummariserResult(
-            summary="Could not parse response",
-            key_stats={},
-            recommendations=[]
-        )
+        fallback = SummariserResult(summary="Could not parse response", key_stats={}, recommendations=[])
+        if span:
+            span.finish(input_tokens=0, output_tokens=0, model=model,
+                        raw_response="", parsed_output="", parse_ok=False, error_message=str(e))
+        return fallback

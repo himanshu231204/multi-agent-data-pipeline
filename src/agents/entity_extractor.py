@@ -34,11 +34,12 @@ class EntityExtractorResult:
     def model_dump(self):
         return self.__dict__
 
-def run(text_preview: str, total_pages: int) -> EntityExtractorResult:
-    print("[Entity Extractor Agent] Starting...")
-
-    response = client.messages.create(
-        model="claude-sonnet-4-5",
+def run(text_preview: str, total_pages: int, model: str = "claude-haiku-4-5-20251001", api_key: str = None, span=None) -> EntityExtractorResult:
+    print(f"[Entity Extractor Agent] Starting... model={model}")
+    import os
+    _client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
+    response = _client.messages.create(
+        model=model,
         max_tokens=1000,
         system=SYSTEM_PROMPT,
         messages=[
@@ -54,16 +55,18 @@ def run(text_preview: str, total_pages: int) -> EntityExtractorResult:
     try:
         data = json.loads(raw)
         result = EntityExtractorResult(**data)
+        if span:
+            span.finish(input_tokens=response.usage.input_tokens,
+                        output_tokens=response.usage.output_tokens,
+                        model=model, raw_response=raw,
+                        parsed_output=str(result.model_dump()), parse_ok=True)
         print(f"[Entity Extractor Agent] Done — {result.total_entities} entities found")
         return result
     except Exception as e:
-        print(f"[Entity Extractor Agent] Error: {e}")
-        return EntityExtractorResult(
-            people=[],
-            organisations=[],
-            locations=[],
-            dates=[],
-            amounts=[],
-            emails=[],
-            total_entities=0
-        )
+        if span:
+            span.finish(input_tokens=getattr(response.usage, 'input_tokens', 0),
+                        output_tokens=getattr(response.usage, 'output_tokens', 0),
+                        model=model, raw_response=raw,
+                        parsed_output="", parse_ok=False, error_message=str(e))
+        return EntityExtractorResult(people=[], organisations=[], locations=[],
+                                     dates=[], amounts=[], emails=[], total_entities=0)
