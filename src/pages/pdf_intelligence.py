@@ -81,6 +81,9 @@ def render(visitor_fp: str):
             pdf_file.name = "sample_report.pdf"
         st.success("Demo PDF loaded — Project Alpha Q1 2024 Report")
 
+    # Determine run_key before pdf_file block so it's available for result display
+    run_key = "run_pdf_routed" if pdf_routing_on else "run_pdf_baseline"
+
     if pdf_file:
         try:
             from pypdf import PdfReader
@@ -108,11 +111,9 @@ def render(visitor_fp: str):
                 m_action   = SONNET
                 m_summary  = SONNET
                 mode_label = "With Router"
-                run_key    = "run_pdf_routed"
             else:
                 m_parser = m_entity = m_risk = m_action = m_summary = SONNET
                 mode_label = "Without Router (Baseline)"
-                run_key    = "run_pdf_baseline"
 
             if st.button(f"▶ Run PDF Pipeline — {mode_label}", use_container_width=True, type="primary"):
                 run_ok, run_mode = check_can_run(pdf_active_user, pdf_byok_key, visitor_fp)
