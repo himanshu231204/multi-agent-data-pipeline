@@ -23,6 +23,7 @@ build/
 # Windows zone identifiers
 *:Zone.Identifier
 
-# coding agents
+
 .opencode/
 AGENTS.md
+.tmp/

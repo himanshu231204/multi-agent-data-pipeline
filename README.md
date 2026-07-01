@@ -93,39 +93,46 @@ Each agent has a single job, its own reasoning, and structured JSON output.
 The Router Engine assigns the cheapest model that can handle each task.  
 Every run is traced, costed, and persisted for full observability.
 
-```
-                    Your data (CSV · PDF · Database)
-                                  ↓
-                    ┌─────────────────────────┐
-                    │  🔒 Access Control Layer  │
-                    │  VPN block · IP fingerprint · Credit gate  │
-                    └─────────────┬───────────┘
-                                  ↓
-                    ┌─────────────────────────┐
-                    │   🧭 Router Engine        │  ← classifies task complexity
-                    │   With Router / Without   │  ← mode toggle
-                    └──────┬──────────┬────────┘
-                           │          │
-              ┌────────────▼──┐  ┌────▼──────────────┐
-              │ CSV Pipeline   │  │  PDF Pipeline      │
-              │ 6 Agents       │  │  5 Agents          │
-              │ Haiku + Sonnet │  │  Haiku → Sonnet    │
-              └────────┬───────┘  └────────┬───────────┘
-                       │                   │
-              ┌────────▼───────────────────▼──────┐
-              │  🔬 Observability & Telemetry       │
-              │  RunTracer · Cost GBP · Guardrails  │
-              └────────────────┬──────────────────┘
-                               │
-              ┌────────────────▼──────────────────┐
-              │  💾 SQLite  (Run History · anon_visitors)  │
-              └────────────────┬──────────────────┘
-                               │
-       ┌───────────────────────▼───────────────────────┐
-       │  📤 Output                                      │
-       │  Dashboard (Compare · Monitor · Cost · Guards)  │
-       │  PDF Intelligence Report Download               │
-       └────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    Input["Your data\nCSV · PDF · Database"]
+    
+    subgraph Access["🔒 Access Control Layer"]
+        VPN["VPN block"]
+        IP["IP fingerprint"]
+        Credits["Credit gate"]
+    end
+    
+    subgraph Router["🧭 Router Engine"]
+        Classify["Classifies task complexity"]
+        Toggle["Mode: With Router / Without"]
+    end
+    
+    subgraph Pipelines["Pipelines"]
+        CSV["CSV Pipeline\n6 Agents\nHaiku + Sonnet"]
+        PDF["PDF Pipeline\n5 Agents\nHaiku → Sonnet"]
+    end
+    
+    subgraph Observability["🔬 Observability & Telemetry"]
+        Tracer["RunTracer"]
+        Cost["Cost GBP"]
+        Guardrails["Guardrails"]
+    end
+    
+    Storage["💾 SQLite\nRun History · anon_visitors"]
+    
+    subgraph Output["📤 Output"]
+        Dashboard["Dashboard\nCompare · Monitor · Cost · Guards"]
+        Report["PDF Intelligence Report Download"]
+    end
+    
+    Input --> Access --> Router
+    Router --> CSV
+    Router --> PDF
+    CSV --> Observability
+    PDF --> Observability
+    Observability --> Storage
+    Storage --> Output
 ```
 
 No config files. No rigid schemas. No rules to write and maintain.
@@ -392,62 +399,95 @@ The hash is stored in SQLite — never the raw IP. Runs persist across page refr
 
 ## Architecture
 
-```
-multi-agent-data-pipeline/
-├── app.py                        # Thin orchestrator (~50 lines) — imports, page config, mode dispatch
-├── pages/
-│   └── observability.py          # 7-tab observability dashboard (Streamlit native page)
-├── src/
-│   ├── ui/                       # Shared UI layer (extracted from app.py)
-│   │   ├── styles.py             # All CSS styles (~700 lines)
-│   │   ├── layout.py             # Topbar, hero section, agents strip, footer
-│   │   ├── auth.py               # GitHub auth, BYOK, VPN block, fingerprinting
-│   │   └── helpers.py            # Result tabs, cost card, comparison table
-│   ├── pages/                    # Page-specific render functions
-│   │   ├── csv_pipeline.py       # CSV pipeline page — mode selector, upload, run, comparison
-│   │   ├── pdf_intelligence.py   # PDF intelligence page — mode selector, sequential agents, results
-│   │   └── db_connectors.py      # Database connectors page — 6 DB forms, mode selector, run
-│   ├── agents/
-│   │   ├── cleaner.py            # CSV cleaning — Haiku
-│   │   ├── pii_anonymiser.py     # PII detection — Haiku
-│   │   ├── validator.py          # Schema validation — Sonnet
-│   │   ├── transformer.py        # Data transformation — Haiku
-│   │   ├── anomaly.py            # Anomaly detection — Sonnet
-│   │   ├── summariser.py         # Business summary — Sonnet
-│   │   ├── pdf_parser.py         # PDF structure analysis — Haiku
-│   │   ├── entity_extractor.py   # Named entity extraction — Haiku
-│   │   ├── risk_detector.py      # Risk and PII detection — Sonnet
-│   │   ├── action_extractor.py   # Action items and decisions — Sonnet
-│   │   └── (pdf summariser via summariser.py)
-│   ├── auth/
-│   │   ├── credits.py            # Credit tracking — anonymous (IP fingerprint) + GitHub + BYOK
-│   │   └── github_api.py         # GitHub API — star/fork verification
-│   ├── connectors/
-│   │   ├── databricks.py         # Azure Databricks
-│   │   ├── snowflake_conn.py     # Snowflake
-│   │   ├── postgres.py           # PostgreSQL
-│   │   ├── mysql.py              # MySQL
-│   │   ├── bigquery.py           # BigQuery
-│   │   └── duckdb_conn.py        # DuckDB
-│   ├── observability/
-│   │   ├── tracer.py             # RunTracer + AgentSpan — tokens, cost, latency, prompts
-│   │   ├── store.py              # SQLite persistence — runs, spans, guardrail events
-│   │   ├── guardrails.py         # GuardrailEngine — budget, timeout, PII, parse failures
-│   │   └── metrics.py            # Analytics queries — cost trend, agent performance
-│   ├── report_generator.py       # fpdf2 PDF report builder — 5-section branded output
-│   ├── cost_config.py            # Model pricing (GBP), token limits, timeouts
-│   ├── router.py                 # Router engine — assigns cheapest model per agent
-│   ├── models.py                 # Pydantic schemas — all agent result types
-│   └── pipeline.py               # CSV pipeline orchestrator
-├── demo/
-│   ├── sample_data.csv           # Demo CSV with intentional data quality issues
-│   └── sample_report.pdf         # Demo PDF for the PDF pipeline
-├── .streamlit/
-│   └── config.toml               # Dark theme, CORS settings for cloud deployment
-├── tests/
-│   └── test_pipeline.py          # 18 passing tests
-├── requirements.txt
-└── .env.example
+```mermaid
+graph TB
+    Root["multi-agent-data-pipeline"]
+    
+    App["app.py\nThin orchestrator (~50 lines)"]
+    
+    subgraph pages["pages/"]
+        ObservabilityPage["observability.py\n7-tab observability dashboard"]
+    end
+    
+    subgraph src["src/"]
+        subgraph ui["ui/ — Shared UI layer"]
+            Styles["styles.py\nAll CSS styles (~700 lines)"]
+            Layout["layout.py\nTopbar, hero section, agents strip, footer"]
+            AuthUI["auth.py\nGitHub auth, BYOK, VPN block, fingerprinting"]
+            Helpers["helpers.py\nResult tabs, cost card, comparison table"]
+        end
+        
+        subgraph pages_src["pages/ — Page renderers"]
+            CSVPage["csv_pipeline.py\nCSV pipeline page"]
+            PDFPage["pdf_intelligence.py\nPDF intelligence page"]
+            DBPage["db_connectors.py\nDatabase connectors page"]
+        end
+        
+        subgraph agents["agents/ — 11 AI agents"]
+            Cleaner["cleaner.py\nCSV cleaning — Haiku"]
+            PII["pii_anonymiser.py\nPII detection — Haiku"]
+            Validator["validator.py\nSchema validation — Sonnet"]
+            Transformer["transformer.py\nData transformation — Haiku"]
+            Anomaly["anomaly.py\nAnomaly detection — Sonnet"]
+            Summariser["summariser.py\nBusiness summary — Sonnet"]
+            PDFParser["pdf_parser.py\nPDF structure analysis — Haiku"]
+            EntityExt["entity_extractor.py\nNamed entity extraction — Haiku"]
+            RiskDet["risk_detector.py\nRisk and PII detection — Sonnet"]
+            ActionExt["action_extractor.py\nAction items and decisions — Sonnet"]
+        end
+        
+        subgraph auth_src["auth/"]
+            Credits["credits.py\nCredit tracking — anonymous + GitHub + BYOK"]
+            GitHubAPI["github_api.py\nGitHub API — star/fork verification"]
+        end
+        
+        subgraph connectors["connectors/ — 7 database connectors"]
+            Databricks["databricks.py\nAzure Databricks"]
+            Snowflake["snowflake_conn.py\nSnowflake"]
+            Postgres["postgres.py\nPostgreSQL"]
+            MySQL["mysql.py\nMySQL"]
+            BigQuery["bigquery.py\nBigQuery"]
+            DuckDB["duckdb_conn.py\nDuckDB"]
+        end
+        
+        subgraph observability["observability/"]
+            Tracer["tracer.py\nRunTracer + AgentSpan"]
+            Store["store.py\nSQLite persistence"]
+            Guardrails["guardrails.py\nGuardrailEngine"]
+            Metrics["metrics.py\nAnalytics queries"]
+        end
+        
+        ReportGen["report_generator.py\nfpdf2 PDF report builder"]
+        CostConfig["cost_config.py\nModel pricing, token limits, timeouts"]
+        Router["router.py\nRouter engine — model assignment"]
+        Models["models.py\nPydantic schemas"]
+        Pipeline["pipeline.py\nCSV pipeline orchestrator"]
+    end
+    
+    subgraph demo["demo/"]
+        SampleCSV["sample_data.csv\nDemo CSV with data quality issues"]
+        SamplePDF["sample_report.pdf\nDemo PDF"]
+    end
+    
+    subgraph streamlit[".streamlit/"]
+        Config["config.toml\nDark theme, CORS settings"]
+    end
+    
+    subgraph tests_dir["tests/"]
+        TestPipeline["test_pipeline.py\n18 passing tests"]
+    end
+    
+    Requirements["requirements.txt"]
+    EnvExample[".env.example"]
+    
+    Root --> App
+    Root --> pages
+    Root --> src
+    Root --> demo
+    Root --> streamlit
+    Root --> tests_dir
+    Root --> Requirements
+    Root --> EnvExample
 ```
 
 ---
