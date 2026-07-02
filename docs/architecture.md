@@ -674,6 +674,11 @@ Each timeout costs 15 percentage points. A full parse with no timeouts = 100%.
 | `src/pages/pdf_intelligence.py` | 323 | PDF pipeline — sequential 5-agent chain |
 | `src/connectors/` | — | Database connectors (DuckDB, etc.) |
 | `src/ui/auth.py` | — | GitHub auth + credit system |
+| `.github/workflows/ci.yml` | — | CI pipeline — ruff lint + pytest matrix (Python 3.10-3.12) |
+| `.github/workflows/cd-dev.yml` | — | CD pipeline — integration tests on dev branch |
+| `tests/test_pipeline.py` | 270 | Unit tests — models, CSV loading, PII, DuckDB, environment |
+| `tests/test_integration.py` | 260 | Integration tests — router, guardrails, pipeline orchestration |
+| `pyproject.toml` | 75 | Build config, dependencies, pytest config, ruff config |
 
 ---
 
@@ -721,7 +726,62 @@ The tracer truncates `raw_response` and `parsed_output` to 2000 characters to ke
 
 ---
 
-## 12. Adding a New Agent
+## 12. CI/CD Architecture
+
+### GitHub Actions Workflows
+
+#### CI Pipeline (`.github/workflows/ci.yml`)
+
+Triggers on push to `main`/`master` and pull requests.
+
+```mermaid
+flowchart LR
+    Push["Push / PR"] --> Lint["Lint Job\nruff check + format\n(Python 3.12)"]
+    Push --> Test["Test Job\npytest\n(Python 3.10, 3.11, 3.12)"]
+```
+
+- **Lint job**: Runs `ruff check .` and `ruff format --check .`
+- **Test job**: Runs unit + integration tests across Python 3.10, 3.11, 3.12
+- Tests that require `ANTHROPIC_API_KEY` are skipped in CI via `@pytest.mark.skipif`
+
+#### CD Pipeline (`.github/workflows/cd-dev.yml`)
+
+Triggers on push to `development`/`dev` branch.
+
+```mermaid
+flowchart LR
+    PushDev["Push to dev"] --> Tests["Integration Tests\npytest tests/test_integration.py\n(Python 3.12)"]
+    Tests --> Deploy["Streamlit Cloud\nAuto-deploy from dev branch"]
+```
+
+### Ruff Configuration
+
+Defined in `pyproject.toml`:
+
+```toml
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP"]
+ignore = ["E501", "E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+```
+
+### Test Structure
+
+| File | Tests | Coverage |
+|------|-------|----------|
+| `test_pipeline.py` | 25 | Models, CSV loading, PII regex, DuckDB, environment |
+| `test_integration.py` | 19 | Router logic, guardrails, pipeline orchestration, imports |
+| **Total** | **44** | Deterministic, no LLM calls |
+
+---
+
+## 14. Adding a New Agent
 
 1. Create `src/agents/your_agent.py` with `SYSTEM_PROMPT` and `run()` function
 2. Add result model to `src/models.py` (Pydantic v2 `BaseModel`)
@@ -772,7 +832,7 @@ def run(csv_preview: str, total_rows: int,
 
 ---
 
-## 13. Adding a Database Connector
+## 15. Adding a Database Connector
 
 Follow the interface in `src/connectors/`:
 

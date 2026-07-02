@@ -41,6 +41,8 @@ Dashboard at [http://localhost:8501/observability](http://localhost:8501/observa
 - **7 database connectors** — Databricks, Snowflake, PostgreSQL, MySQL, BigQuery, DuckDB, Redshift
 - **Guardrails engine** — budget caps, agent timeouts, PII limits, parse failure thresholds
 - **GitHub credit system** — 2 free runs, star bonus, BYOK for unlimited access
+- **CI/CD** — GitHub Actions with lint (ruff) + test matrix (Python 3.10-3.12)
+- **Code quality** — Ruff for linting and formatting, 44 passing tests
 
 ---
 
@@ -124,6 +126,6 @@ Disable routing with `routing_enabled=False` — all agents use Sonnet.
 
 ## Version & License
 
-- **Version**: 2.0.0
+- **Version**: 2.1.0
 - **License**: MIT
 - **Author**: Harshit Tripathi / [Britcore.AI](https://britcore.ai) ([@harshitboots](https://github.com/harshitboots))

@@ -4,7 +4,8 @@ import streamlit as st
 
 
 def render_topbar():
-    st.markdown("""
+    st.markdown(
+        """
 <div class="topbar">
     <div>
         <div class="pipe-title">⚡ MULTI-AGENT DATA PIPELINE</div>
@@ -15,11 +16,14 @@ def render_topbar():
         <div class="v-badge">v2.0.0</div>
     </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 
 
 def render_hero():
-    st.markdown("""
+    st.markdown(
+        """
 <div class="hero">
 <div class="hero-inner">
 <div class="hero-left">
@@ -58,11 +62,14 @@ def render_hero():
 </div>
 </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 
 
 def render_agents_strip():
-    st.markdown("""
+    st.markdown(
+        """
 <div class="agents-strip">
     <div class="agents-title">Pipeline Agents — Wave 1 runs in parallel · Wave 2 synthesises</div>
     <div class="ac"><div class="ac-num">01 · WAVE 1</div><div class="ac-icon">🧹</div><div class="ac-name">Cleaner</div><div class="ac-desc">Fixes nulls, date formats & inconsistencies across all rows</div><div class="ac-model">Haiku · Fast</div></div>
@@ -72,11 +79,14 @@ def render_agents_strip():
     <div class="ac"><div class="ac-num">05 · WAVE 1</div><div class="ac-icon">📡</div><div class="ac-name">Anomaly Detector</div><div class="ac-desc">Finds outliers, impossible values & suspicious patterns</div><div class="ac-model">Sonnet · Quality</div></div>
     <div class="ac"><div class="ac-num">06 · WAVE 2</div><div class="ac-icon">📊</div><div class="ac-name">Summariser</div><div class="ac-desc">Generates business insights & recommendations from all agents</div><div class="ac-model">Sonnet · Quality</div></div>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 
 
 def render_footer():
-    st.markdown("""
+    st.markdown(
+        """
 <div class="footer">
     <div class="footer-left">
         <span class="footer-dot"></span>
@@ -84,4 +94,6 @@ def render_footer():
     </div>
     <div class="footer-right">v2.0.0 · <span>MIT License</span></div>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )

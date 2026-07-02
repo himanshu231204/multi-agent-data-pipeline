@@ -1,15 +1,13 @@
-import pandas as pd
 import mysql.connector
+import pandas as pd
+
 
 def connect(host: str, port: int, database: str, user: str, password: str):
     conn = mysql.connector.connect(
-        host=host,
-        port=port,
-        database=database,
-        user=user,
-        password=password
+        host=host, port=port, database=database, user=user, password=password
     )
     return conn
+
 
 def list_tables(host: str, port: int, database: str, user: str, password: str) -> list:
     conn = connect(host, port, database, user, password)
@@ -20,7 +18,16 @@ def list_tables(host: str, port: int, database: str, user: str, password: str) -
     conn.close()
     return tables
 
-def fetch_table(host: str, port: int, database: str, user: str, password: str, table: str, limit: int = 1000) -> pd.DataFrame:
+
+def fetch_table(
+    host: str,
+    port: int,
+    database: str,
+    user: str,
+    password: str,
+    table: str,
+    limit: int = 1000,
+) -> pd.DataFrame:
     conn = connect(host, port, database, user, password)
     cursor = conn.cursor()
     cursor.execute(f"SELECT * FROM {table} LIMIT {limit}")

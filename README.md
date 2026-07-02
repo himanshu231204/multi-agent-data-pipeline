@@ -11,7 +11,7 @@
 
 <br/>
 
-[![Version](https://img.shields.io/badge/version-1.3.0-brightgreen?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.1.0-brightgreen?style=flat-square)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://multi-agent-pipeline-demo.streamlit.app)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-red?style=flat-square&logo=streamlit&logoColor=white)](https://streamlit.io)
@@ -27,7 +27,7 @@
 
 <br/>
 
-**[🚀 Quick Start](#quick-start) · [⚡ What's New in v1.3](#whats-new-in-v13) · [🔀 Router Engine](#router-engine) · [📄 PDF Intelligence](#pdf-intelligence-pipeline) · [📡 Observability](#observability-dashboard) · [🔌 Connectors](#data-sources) · [🤝 Contributing](#contributing)**
+**[🚀 Quick Start](#quick-start) · [⚡ What's New in v2.1](#whats-new-in-v21) · [🔀 Router Engine](#router-engine) · [📄 PDF Intelligence](#pdf-intelligence-pipeline) · [📡 Observability](#observability-dashboard) · [🔌 Connectors](#data-sources) · [🤝 Contributing](#contributing)**
 
 <br/>
 
@@ -39,9 +39,17 @@
 
 ---
 
-## What's New in v1.3
+## What's New in v2.1
 
-> **v1.3.0 — July 2026** · [Full changelog](#changelog)
+> **v2.1.0 — July 2026** · [Full changelog](#changelog)
+
+| Feature | Detail |
+|---------|--------|
+| **CI/CD Pipeline** | GitHub Actions — lint (ruff) + test matrix (Python 3.10-3.12) on every push/PR to main |
+| **Development CD** | Integration tests run on every push to `dev` branch. Streamlit Cloud auto-deploys from dev |
+| **Code Quality — Ruff** | Added ruff for linting and formatting. 130+ issues auto-fixed across 29 files |
+| **Integration Tests** | 19 new tests covering router logic, guardrail engine, pipeline orchestration, and import smoke tests |
+| **Test Suite Expanded** | From 18 to 44 tests — unit + integration + regression coverage |
 
 | Feature | Detail |
 |---------|--------|
@@ -469,12 +477,18 @@ graph TB
         SamplePDF["sample_report.pdf\nDemo PDF"]
     end
     
+    subgraph ci["CI/CD"]
+        CI["ci.yml\nLint + Test Matrix"]
+        CD["cd-dev.yml\nIntegration Tests"]
+    end
+    
     subgraph streamlit[".streamlit/"]
         Config["config.toml\nDark theme, CORS settings"]
     end
     
     subgraph tests_dir["tests/"]
-        TestPipeline["test_pipeline.py\n18 passing tests"]
+        TestPipeline["test_pipeline.py\n25 unit tests"]
+        TestIntegration["test_integration.py\n19 integration tests"]
     end
     
     Requirements["requirements.txt"]
@@ -691,6 +705,47 @@ gcloud run deploy multi-agent-pipeline \
 
 ---
 
+## CI/CD Pipeline
+
+### GitHub Actions
+
+The project uses GitHub Actions for continuous integration and deployment.
+
+#### CI (`ci.yml`) — Runs on push to `main`/`master` and PRs
+
+| Job | What it does |
+|-----|-------------|
+| **lint** | Runs `ruff check .` and `ruff format --check .` (Python 3.12) |
+| **test** | Runs `pytest tests/test_pipeline.py tests/test_integration.py` across Python 3.10, 3.11, 3.12 |
+
+#### CD (`cd-dev.yml`) — Runs on push to `development`/`dev`
+
+| Job | What it does |
+|-----|-------------|
+| **integration-tests** | Runs `pytest tests/test_integration.py` (Python 3.12) |
+| **deploy** | Streamlit Cloud auto-deploys from the `dev` branch |
+
+### Local Development
+
+```bash
+# Lint
+ruff check .
+
+# Format
+ruff format .
+
+# Run all tests
+pytest tests/ -v
+```
+
+### Adding to CI
+
+1. Add `ANTHROPIC_API_KEY` as a repository secret in GitHub Settings → Secrets
+2. Push to `main` to trigger CI
+3. Push to `dev` to trigger CD + Streamlit Cloud deploy
+
+---
+
 ### Environment Variables
 
 | Variable | Required | Description |
@@ -719,7 +774,9 @@ gcloud run deploy multi-agent-pipeline \
 | Persistence | SQLite (`pipeline_runs.db`) |
 | Access Control | ip-api.com (VPN detection), SHA-256 fingerprinting |
 | Connectors | Databricks SDK, Snowflake, psycopg2, mysql-connector, BigQuery, DuckDB |
-| Testing | pytest (18 passing) |
+| Linting & Formatting | Ruff (check + format) |
+| CI/CD | GitHub Actions — lint + test matrix |
+| Testing | pytest (44 passing) |
 
 ---
 
@@ -804,6 +861,9 @@ gcloud run deploy multi-agent-pipeline \
 - [x] Anonymous run tracking (IP fingerprint)
 - [x] PDF Intelligence Report download
 - [x] Streamlit Cloud deployment
+- [x] GitHub Actions CI/CD
+- [x] Ruff linting and formatting
+- [x] Integration test suite (router, guardrails, pipeline)
 - [ ] `pip install multi-agent-data-pipeline`
 - [ ] MongoDB connector
 - [ ] Redshift connector
@@ -812,7 +872,6 @@ gcloud run deploy multi-agent-pipeline \
 - [ ] Agent memory — learn from past runs
 - [ ] Webhook support — trigger via HTTP
 - [ ] Docker image on Docker Hub
-- [ ] GitHub Actions CI/CD
 
 ---
 
@@ -883,7 +942,8 @@ git push origin feature/your-feature
 ### Contribution Guidelines
 
 - One feature per PR
-- All 18 tests must pass
+- All 44 tests must pass (`pytest tests/ -v`)
+- Run `ruff check .` and `ruff format .` before committing
 - Follow existing agent structure — same `run()` signature, same `span.finish()` pattern
 - Update README if adding a connector or agent
 
@@ -892,11 +952,14 @@ git push origin feature/your-feature
 ## Running Tests
 
 ```bash
-pytest tests/ -v
+pytest tests/ -v                    # All tests
+pytest tests/test_pipeline.py -v    # Unit tests only
+pytest tests/test_integration.py -v # Integration tests only
+pytest -k test_router               # Single test by name
 ```
 
 ```
-18 passed in 0.6s
+44 passed in 4.7s
 ```
 
 ---

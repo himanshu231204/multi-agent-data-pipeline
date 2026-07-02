@@ -1,5 +1,6 @@
-import os
 import json
+import os
+
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
@@ -22,6 +23,7 @@ JSON format:
     "parsing_notes": ["note1", "note2"]
 }"""
 
+
 class PDFParserResult:
     def __init__(self, **kwargs):
         self.document_type = kwargs.get("document_type", "unknown")
@@ -36,34 +38,60 @@ class PDFParserResult:
     def model_dump(self):
         return self.__dict__
 
-def run(text_preview: str, total_pages: int, model: str = "claude-haiku-4-5-20251001", api_key: str = None, span=None) -> PDFParserResult:
+
+def run(
+    text_preview: str,
+    total_pages: int,
+    model: str = "claude-haiku-4-5-20251001",
+    api_key: str = None,
+    span=None,
+) -> PDFParserResult:
     print(f"[PDF Parser Agent] Starting... model={model}")
     import os
+
     _client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
     user_msg = f"Parse this PDF document ({total_pages} pages):\n\n{text_preview}"
     response = _client.messages.create(
         model=model,
         max_tokens=1000,
         system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_msg}]
+        messages=[{"role": "user", "content": user_msg}],
     )
 
-    raw = response.content[0].text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    raw = (
+        response.content[0]
+        .text.strip()
+        .removeprefix("```json")
+        .removeprefix("```")
+        .removesuffix("```")
+        .strip()
+    )
 
     try:
         data = json.loads(raw)
         result = PDFParserResult(**data)
         if span:
-            span.finish(input_tokens=response.usage.input_tokens,
-                        output_tokens=response.usage.output_tokens,
-                        model=model, raw_response=raw,
-                        parsed_output=str(result.model_dump()), parse_ok=True)
+            span.finish(
+                input_tokens=response.usage.input_tokens,
+                output_tokens=response.usage.output_tokens,
+                model=model,
+                raw_response=raw,
+                parsed_output=str(result.model_dump()),
+                parse_ok=True,
+            )
         print(f"[PDF Parser Agent] Done — {result.document_type}")
         return result
     except Exception as e:
         if span:
-            span.finish(input_tokens=getattr(response.usage, 'input_tokens', 0),
-                        output_tokens=getattr(response.usage, 'output_tokens', 0),
-                        model=model, raw_response=raw,
-                        parsed_output="", parse_ok=False, error_message=str(e))
-        return PDFParserResult(document_type="unknown", parsing_notes=["Could not parse response"])
+            span.finish(
+                input_tokens=getattr(response.usage, "input_tokens", 0),
+                output_tokens=getattr(response.usage, "output_tokens", 0),
+                model=model,
+                raw_response=raw,
+                parsed_output="",
+                parse_ok=False,
+                error_message=str(e),
+            )
+        return PDFParserResult(
+            document_type="unknown", parsing_notes=["Could not parse response"]
+        )

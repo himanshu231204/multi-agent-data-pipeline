@@ -1,4 +1,4 @@
-from src.observability.store import get_runs, get_spans, get_agent_stats, get_budget
+from src.observability.store import get_agent_stats, get_budget, get_runs, get_spans
 
 
 def run_quality_score(run_id: str) -> float:
@@ -18,8 +18,12 @@ def run_quality_score(run_id: str) -> float:
 def cost_trend(limit: int = 20) -> list[dict]:
     runs = get_runs(limit)
     return [
-        {"run_id": r["run_id"], "timestamp": r["timestamp"],
-         "cost_gbp": r["total_cost_gbp"], "mode": r["mode"]}
+        {
+            "run_id": r["run_id"],
+            "timestamp": r["timestamp"],
+            "cost_gbp": r["total_cost_gbp"],
+            "mode": r["mode"],
+        }
         for r in reversed(runs)
     ]
 
@@ -29,18 +33,24 @@ def agent_performance_table() -> list[dict]:
     result = []
     for s in stats:
         runs = s["runs"] or 1
-        result.append({
-            "agent": s["agent_name"],
-            "runs": runs,
-            "avg_latency_s": round((s["avg_latency_ms"] or 0) / 1000, 2),
-            "avg_cost_gbp": round(s["avg_cost_gbp"] or 0, 5),
-            "parse_fail_pct": round((s["parse_failures"] or 0) / runs * 100, 1),
-            "error_rate_pct": round((s["errors"] or 0) / runs * 100, 1),
-            "timeout_rate_pct": round((s["timeouts"] or 0) / runs * 100, 1),
-            "reliability_pct": round(
-                max(0, 100 - ((s["errors"] or 0) + (s["timeouts"] or 0)) / runs * 100), 1
-            ),
-        })
+        result.append(
+            {
+                "agent": s["agent_name"],
+                "runs": runs,
+                "avg_latency_s": round((s["avg_latency_ms"] or 0) / 1000, 2),
+                "avg_cost_gbp": round(s["avg_cost_gbp"] or 0, 5),
+                "parse_fail_pct": round((s["parse_failures"] or 0) / runs * 100, 1),
+                "error_rate_pct": round((s["errors"] or 0) / runs * 100, 1),
+                "timeout_rate_pct": round((s["timeouts"] or 0) / runs * 100, 1),
+                "reliability_pct": round(
+                    max(
+                        0,
+                        100 - ((s["errors"] or 0) + (s["timeouts"] or 0)) / runs * 100,
+                    ),
+                    1,
+                ),
+            }
+        )
     return result
 
 
@@ -62,8 +72,13 @@ def summary_stats() -> dict:
     budget = get_budget()
     runs = get_runs(200)
     if not runs:
-        return {"total_runs": 0, "total_cost_gbp": 0,
-                "avg_cost_gbp": 0, "avg_latency_s": 0, "success_rate_pct": 100}
+        return {
+            "total_runs": 0,
+            "total_cost_gbp": 0,
+            "avg_cost_gbp": 0,
+            "avg_latency_s": 0,
+            "success_rate_pct": 100,
+        }
     costs = [r["total_cost_gbp"] for r in runs]
     latencies = [r["total_latency_ms"] for r in runs]
     successes = sum(1 for r in runs if r["status"] == "complete")

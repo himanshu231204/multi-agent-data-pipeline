@@ -16,8 +16,10 @@ def get_repo_stats() -> dict:
         r = _get(f"{_BASE}/repos/{REPO_OWNER}/{REPO_NAME}")
         if r.status_code == 200:
             data = r.json()
-            return {"stars": data.get("stargazers_count", 0),
-                    "forks": data.get("forks_count", 0)}
+            return {
+                "stars": data.get("stargazers_count", 0),
+                "forks": data.get("forks_count", 0),
+            }
     except Exception:
         pass
     return {"stars": 0, "forks": 0}
@@ -37,8 +39,10 @@ def has_forked(username: str) -> bool:
         if r.status_code != 200:
             return False
         forks = r.json()
-        return any(f.get("owner", {}).get("login", "").lower() == username.lower()
-                   for f in forks)
+        return any(
+            f.get("owner", {}).get("login", "").lower() == username.lower()
+            for f in forks
+        )
     except Exception:
         return False
 

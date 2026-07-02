@@ -3,10 +3,16 @@
 import streamlit as st
 
 from src.auth.credits import (
-    get_or_create_user, get_credits, record_run, refresh_github_status, can_run,
-    make_fingerprint, get_anon_runs, record_anon_run, FREE_ANON_RUNS,
+    FREE_ANON_RUNS,
+    can_run,
+    get_anon_runs,
+    get_credits,
+    make_fingerprint,
+    record_anon_run,
+    record_run,
+    refresh_github_status,
 )
-from src.auth.github_api import get_repo_stats, validate_username, has_followed
+from src.auth.github_api import get_repo_stats, validate_username
 
 
 def get_client_ip() -> str:
@@ -23,15 +29,20 @@ def get_client_ip() -> str:
 
 def is_vpn(ip: str) -> bool:
     """Check ip-api.com free endpoint. Returns True if proxy/VPN/datacenter."""
-    if not ip or ip in ("127.0.0.1", "::1", "localhost") or ip.startswith("192.168.") or ip.startswith("10."):
+    if (
+        not ip
+        or ip in ("127.0.0.1", "::1", "localhost")
+        or ip.startswith("192.168.")
+        or ip.startswith("10.")
+    ):
         return False
     if st.session_state.get("vpn_checked_ip") == ip:
         return st.session_state.get("vpn_result", False)
     try:
         import requests as _req
+
         r = _req.get(
-            f"https://ip-api.com/json/{ip}?fields=status,proxy,hosting",
-            timeout=3
+            f"https://ip-api.com/json/{ip}?fields=status,proxy,hosting", timeout=3
         )
         if r.status_code == 200:
             data = r.json()
@@ -59,7 +70,8 @@ def get_fingerprint() -> str:
 
 def render_vpn_block():
     """Render VPN block message and stop the app."""
-    st.markdown("""
+    st.markdown(
+        """
 <style>
 html,body,[class*="css"],.stApp{background:#0f172a!important;}
 .vpn-block{max-width:480px;margin:120px auto;background:#1e293b;border:1.5px solid #ef4444;
@@ -73,7 +85,9 @@ border-radius:20px;padding:40px 36px;text-align:center;}
 <div class="vpn-sub">This demo is not available over VPN or proxy connections.<br>
 Please disable your VPN and reload the page.</div>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
     st.stop()
 
 
@@ -90,7 +104,8 @@ def auth_section(tab_prefix: str):
     except Exception:
         stars_txt, forks_txt = "⭐ Stars", "🍴 Forks"
 
-    st.markdown(f"""
+    st.markdown(
+        f"""
 <div class="tier-section">
 <div class="tier-header">
 <div>
@@ -126,7 +141,9 @@ def auth_section(tab_prefix: str):
 </div>
 </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
 
     gh_col, status_col = st.columns([1, 1])
     with gh_col:
@@ -137,7 +154,11 @@ def auth_section(tab_prefix: str):
             label_visibility="visible",
             value=st.session_state.get("github_user", ""),
         )
-        if github_username and st.button("Verify & Check Credits", key=f"{tab_prefix}_check_credits", use_container_width=True):
+        if github_username and st.button(
+            "Verify & Check Credits",
+            key=f"{tab_prefix}_check_credits",
+            use_container_width=True,
+        ):
             with st.spinner("Checking GitHub..."):
                 if validate_username(github_username):
                     refresh_github_status(github_username)
@@ -154,16 +175,26 @@ def auth_section(tab_prefix: str):
         credits_info = get_credits(active_user)
         with status_col:
             if credits_info["lifetime"]:
-                st.success("♾️ **Lifetime access** — Fork + Follow verified. Unlimited runs.")
+                st.success(
+                    "♾️ **Lifetime access** — Fork + Follow verified. Unlimited runs."
+                )
             elif credits_info["remaining_free"] > 0:
-                bars = "🟢" * credits_info["remaining_free"] + "⚪" * (credits_info["max_free_runs"] - credits_info["remaining_free"])
+                bars = "🟢" * credits_info["remaining_free"] + "⚪" * (
+                    credits_info["max_free_runs"] - credits_info["remaining_free"]
+                )
                 st.info(
                     f"**{credits_info['remaining_free']} run(s) remaining** {bars}\n\n"
                     f"{credits_info['runs_used']} of {credits_info['max_free_runs']} used · "
-                    + ("⭐ Star bonus active" if credits_info["has_starred"] else "⭐ Star to get +3 runs")
+                    + (
+                        "⭐ Star bonus active"
+                        if credits_info["has_starred"]
+                        else "⭐ Star to get +3 runs"
+                    )
                 )
             else:
-                st.warning("Free runs used — add your API key below or fork the repo for lifetime access")
+                st.warning(
+                    "Free runs used — add your API key below or fork the repo for lifetime access"
+                )
 
             if credits_info["has_starred"] and not credits_info["has_followed"]:
                 st.info("💡 Also follow @harshitboots to unlock the +3 star bonus")
@@ -174,7 +205,8 @@ def auth_section(tab_prefix: str):
         "I want to use my own Anthropic API key", key=f"{tab_prefix}_show_byok"
     )
     if show_byok:
-        st.markdown("""
+        st.markdown(
+            """
 <div class="byok-card">
 <div class="byok-header">
 <span style="font-size:22px;">&#128273;</span>
@@ -186,7 +218,9 @@ Paste your Anthropic API key below to run with no credit limits.<br>
 <strong>Your key is never stored</strong> &mdash; it lives only in this browser session and is gone when you close the tab.
 </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+            unsafe_allow_html=True,
+        )
         byok_key = st.text_input(
             "Anthropic API key (sk-ant-...)",
             type="password",
@@ -227,6 +261,10 @@ def anon_credit_banner(visitor_fp: str):
     remaining = max(0, FREE_ANON_RUNS - used)
     if remaining > 0:
         bars = "🟢" * remaining + "⚪" * (FREE_ANON_RUNS - remaining)
-        st.info(f"**{remaining} free run(s) remaining** {bars} — No login needed. Enter your GitHub username above to unlock more.")
+        st.info(
+            f"**{remaining} free run(s) remaining** {bars} — No login needed. Enter your GitHub username above to unlock more."
+        )
     else:
-        st.warning("Free runs used — enter your GitHub username above to get more, or add your Anthropic API key.")
+        st.warning(
+            "Free runs used — enter your GitHub username above to get more, or add your Anthropic API key."
+        )

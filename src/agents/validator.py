@@ -1,9 +1,11 @@
-import os
 import json
+import os
+
 from anthropic import Anthropic
 from dotenv import load_dotenv
+
+from src.cost_config import AGENT_MAX_TOKENS, MODELS
 from src.models import ValidatorResult
-from src.cost_config import MODELS, AGENT_MAX_TOKENS
 
 load_dotenv()
 
@@ -19,8 +21,9 @@ JSON format:
 }"""
 
 
-def run(csv_preview: str, total_rows: int,
-        model: str = None, span=None) -> ValidatorResult:
+def run(
+    csv_preview: str, total_rows: int, model: str = None, span=None
+) -> ValidatorResult:
     if model is None:
         model = MODELS["quality"]
     client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
@@ -31,23 +34,43 @@ def run(csv_preview: str, total_rows: int,
             model=model,
             max_tokens=AGENT_MAX_TOKENS["validator"],
             system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": user_msg}]
+            messages=[{"role": "user", "content": user_msg}],
         )
-        raw = response.content[0].text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        raw = (
+            response.content[0]
+            .text.strip()
+            .removeprefix("```json")
+            .removeprefix("```")
+            .removesuffix("```")
+            .strip()
+        )
         data = json.loads(raw)
         result = ValidatorResult(**data)
         if span:
             span.finish(
                 input_tokens=response.usage.input_tokens,
                 output_tokens=response.usage.output_tokens,
-                model=model, raw_response=raw,
-                parsed_output=str(result.model_dump()), parse_ok=True
+                model=model,
+                raw_response=raw,
+                parsed_output=str(result.model_dump()),
+                parse_ok=True,
             )
         return result
     except Exception as e:
-        fallback = ValidatorResult(schema_ok=False, violations=["Could not parse response"],
-                                   passed_checks=[], completeness_score=0.0)
+        fallback = ValidatorResult(
+            schema_ok=False,
+            violations=["Could not parse response"],
+            passed_checks=[],
+            completeness_score=0.0,
+        )
         if span:
-            span.finish(input_tokens=0, output_tokens=0, model=model,
-                        raw_response="", parsed_output="", parse_ok=False, error_message=str(e))
+            span.finish(
+                input_tokens=0,
+                output_tokens=0,
+                model=model,
+                raw_response="",
+                parsed_output="",
+                parse_ok=False,
+                error_message=str(e),
+            )
         return fallback

@@ -1,7 +1,7 @@
 """Display helper functions for pipeline results, cost cards, and comparison tables."""
 
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
 
 def display_result_tabs(result):
@@ -10,8 +10,13 @@ def display_result_tabs(result):
     c1, c2, c3, c4, c5, c6 = st.columns(6)
     c1.metric("Rows Fixed", result.cleaner.rows_affected if result.cleaner else 0)
     c2.metric("PII Rows", result.pii.rows_affected if result.pii else 0)
-    c3.metric("Completeness", f"{result.validator.completeness_score if result.validator else 0}%")
-    c4.metric("Transformed", result.transformer.rows_transformed if result.transformer else 0)
+    c3.metric(
+        "Completeness",
+        f"{result.validator.completeness_score if result.validator else 0}%",
+    )
+    c4.metric(
+        "Transformed", result.transformer.rows_transformed if result.transformer else 0
+    )
     c5.metric("Anomalies", result.anomaly.anomaly_count if result.anomaly else 0)
     c6.metric("Quality", f"{result.quality_score}%")
 
@@ -58,10 +63,16 @@ def display_cost_card(result, label: str):
     st.metric("Latency", f"{result.total_latency_ms}ms")
     st.metric("Mode", result.mode)
     if result.telemetry:
-        rows = [{"Agent": t.agent_name, "Model": t.model_label,
-                 "Cost GBP": f"{t.cost_gbp:.5f}", "Latency ms": t.latency_ms,
-                 "Status": "ok" if t.parse_ok else "FAIL"}
-                for t in result.telemetry]
+        rows = [
+            {
+                "Agent": t.agent_name,
+                "Model": t.model_label,
+                "Cost GBP": f"{t.cost_gbp:.5f}",
+                "Latency ms": t.latency_ms,
+                "Status": "ok" if t.parse_ok else "FAIL",
+            }
+            for t in result.telemetry
+        ]
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
 
@@ -71,23 +82,45 @@ def comparison_table(baseline, routed):
     st.markdown("### Cost Comparison")
     rows = []
     for bt in baseline.telemetry:
-        rt_match = next((r for r in routed.telemetry if r.agent_name == bt.agent_name), None)
-        saving = ((bt.cost_gbp - rt_match.cost_gbp) / bt.cost_gbp * 100) if rt_match and bt.cost_gbp > 0 else 0
-        rows.append({
-            "Agent": bt.agent_name,
-            "Without Router": f"GBP {bt.cost_gbp:.5f} ({bt.model_label})",
-            "With Router": f"GBP {rt_match.cost_gbp:.5f} ({rt_match.model_label})" if rt_match else "-",
-            "Saving": f"{saving:.0f}%" if saving else "-",
-        })
-    rows.append({
-        "Agent": "TOTAL",
-        "Without Router": f"GBP {baseline.total_cost_gbp:.5f}",
-        "With Router": f"GBP {routed.total_cost_gbp:.5f}",
-        "Saving": f"{(baseline.total_cost_gbp - routed.total_cost_gbp) / baseline.total_cost_gbp * 100:.0f}%" if baseline.total_cost_gbp > 0 else "-",
-    })
+        rt_match = next(
+            (r for r in routed.telemetry if r.agent_name == bt.agent_name), None
+        )
+        saving = (
+            ((bt.cost_gbp - rt_match.cost_gbp) / bt.cost_gbp * 100)
+            if rt_match and bt.cost_gbp > 0
+            else 0
+        )
+        rows.append(
+            {
+                "Agent": bt.agent_name,
+                "Without Router": f"GBP {bt.cost_gbp:.5f} ({bt.model_label})",
+                "With Router": f"GBP {rt_match.cost_gbp:.5f} ({rt_match.model_label})"
+                if rt_match
+                else "-",
+                "Saving": f"{saving:.0f}%" if saving else "-",
+            }
+        )
+    rows.append(
+        {
+            "Agent": "TOTAL",
+            "Without Router": f"GBP {baseline.total_cost_gbp:.5f}",
+            "With Router": f"GBP {routed.total_cost_gbp:.5f}",
+            "Saving": f"{(baseline.total_cost_gbp - routed.total_cost_gbp) / baseline.total_cost_gbp * 100:.0f}%"
+            if baseline.total_cost_gbp > 0
+            else "-",
+        }
+    )
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-    lat_saving = (baseline.total_latency_ms - routed.total_latency_ms) / baseline.total_latency_ms * 100 if baseline.total_latency_ms > 0 else 0
+    lat_saving = (
+        (baseline.total_latency_ms - routed.total_latency_ms)
+        / baseline.total_latency_ms
+        * 100
+        if baseline.total_latency_ms > 0
+        else 0
+    )
     c1, c2, c3 = st.columns(3)
-    c1.metric("Cost saved", f"{(baseline.total_cost_gbp - routed.total_cost_gbp):.5f} GBP")
+    c1.metric(
+        "Cost saved", f"{(baseline.total_cost_gbp - routed.total_cost_gbp):.5f} GBP"
+    )
     c2.metric("Latency saved", f"{lat_saving:.0f}%")
     c3.metric("Quality delta", f"{routed.quality_score - baseline.quality_score:+.1f}%")

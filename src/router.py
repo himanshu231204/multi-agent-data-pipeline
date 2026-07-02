@@ -1,10 +1,17 @@
 from dataclasses import dataclass
+
 from src.cost_config import MODELS
 
-
 SIMPLE_AGENTS = {"cleaner", "pii_anonymiser", "transformer"}
-COMPLEX_AGENTS = {"validator", "anomaly", "summariser",
-                  "pdf_parser", "entity_extractor", "risk_detector", "action_extractor"}
+COMPLEX_AGENTS = {
+    "validator",
+    "anomaly",
+    "summariser",
+    "pdf_parser",
+    "entity_extractor",
+    "risk_detector",
+    "action_extractor",
+}
 
 ROW_THRESHOLD = 500
 
@@ -18,7 +25,9 @@ class RouterDecision:
     routing_enabled: bool
 
 
-def route(agent_name: str, total_rows: int = 0, routing_enabled: bool = True) -> RouterDecision:
+def route(
+    agent_name: str, total_rows: int = 0, routing_enabled: bool = True
+) -> RouterDecision:
     if not routing_enabled:
         return RouterDecision(
             agent_name=agent_name,
@@ -31,11 +40,11 @@ def route(agent_name: str, total_rows: int = 0, routing_enabled: bool = True) ->
     if agent_name in SIMPLE_AGENTS:
         model = MODELS["fast"]
         label = "Haiku"
-        reason = f"Simple mechanical task — Haiku sufficient, no reasoning required"
+        reason = "Simple mechanical task — Haiku sufficient, no reasoning required"
     elif agent_name in COMPLEX_AGENTS:
         model = MODELS["quality"]
         label = "Sonnet"
-        reason = f"Complex reasoning task — Sonnet required for quality"
+        reason = "Complex reasoning task — Sonnet required for quality"
     else:
         model = MODELS["quality"]
         label = "Sonnet"

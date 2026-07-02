@@ -1,5 +1,6 @@
-import os
 import json
+import os
+
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
@@ -21,6 +22,7 @@ JSON format:
     "total_entities": 15
 }"""
 
+
 class EntityExtractorResult:
     def __init__(self, **kwargs):
         self.people = kwargs.get("people", [])
@@ -34,9 +36,17 @@ class EntityExtractorResult:
     def model_dump(self):
         return self.__dict__
 
-def run(text_preview: str, total_pages: int, model: str = "claude-haiku-4-5-20251001", api_key: str = None, span=None) -> EntityExtractorResult:
+
+def run(
+    text_preview: str,
+    total_pages: int,
+    model: str = "claude-haiku-4-5-20251001",
+    api_key: str = None,
+    span=None,
+) -> EntityExtractorResult:
     print(f"[Entity Extractor Agent] Starting... model={model}")
     import os
+
     _client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
     response = _client.messages.create(
         model=model,
@@ -45,28 +55,51 @@ def run(text_preview: str, total_pages: int, model: str = "claude-haiku-4-5-2025
         messages=[
             {
                 "role": "user",
-                "content": f"Extract entities from this document ({total_pages} pages):\n\n{text_preview}"
+                "content": f"Extract entities from this document ({total_pages} pages):\n\n{text_preview}",
             }
-        ]
+        ],
     )
 
-    raw = response.content[0].text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    raw = (
+        response.content[0]
+        .text.strip()
+        .removeprefix("```json")
+        .removeprefix("```")
+        .removesuffix("```")
+        .strip()
+    )
 
     try:
         data = json.loads(raw)
         result = EntityExtractorResult(**data)
         if span:
-            span.finish(input_tokens=response.usage.input_tokens,
-                        output_tokens=response.usage.output_tokens,
-                        model=model, raw_response=raw,
-                        parsed_output=str(result.model_dump()), parse_ok=True)
+            span.finish(
+                input_tokens=response.usage.input_tokens,
+                output_tokens=response.usage.output_tokens,
+                model=model,
+                raw_response=raw,
+                parsed_output=str(result.model_dump()),
+                parse_ok=True,
+            )
         print(f"[Entity Extractor Agent] Done — {result.total_entities} entities found")
         return result
     except Exception as e:
         if span:
-            span.finish(input_tokens=getattr(response.usage, 'input_tokens', 0),
-                        output_tokens=getattr(response.usage, 'output_tokens', 0),
-                        model=model, raw_response=raw,
-                        parsed_output="", parse_ok=False, error_message=str(e))
-        return EntityExtractorResult(people=[], organisations=[], locations=[],
-                                     dates=[], amounts=[], emails=[], total_entities=0)
+            span.finish(
+                input_tokens=getattr(response.usage, "input_tokens", 0),
+                output_tokens=getattr(response.usage, "output_tokens", 0),
+                model=model,
+                raw_response=raw,
+                parsed_output="",
+                parse_ok=False,
+                error_message=str(e),
+            )
+        return EntityExtractorResult(
+            people=[],
+            organisations=[],
+            locations=[],
+            dates=[],
+            amounts=[],
+            emails=[],
+            total_entities=0,
+        )
