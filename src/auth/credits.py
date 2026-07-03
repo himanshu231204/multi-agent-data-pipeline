@@ -1,9 +1,12 @@
 import hashlib
+import logging
 import os
 import sqlite3
 
 from src.auth.github_api import has_followed, has_forked, has_starred
 from src.cost_config import FREE_RUNS, LIFETIME_ACCESS_RUNS, STAR_BONUS_RUNS
+
+logger = logging.getLogger(__name__)
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "pipeline_runs.db")
 
@@ -116,6 +119,11 @@ def get_or_create_user(username: str) -> dict:
         "first_seen",
         "last_seen",
     ]
+    if len(cols) != len(row):
+        logger.warning(
+            "Column/value length mismatch in credits: %d cols vs %d values",
+            len(cols), len(row),
+        )
     return dict(zip(cols, row, strict=False))
 
 

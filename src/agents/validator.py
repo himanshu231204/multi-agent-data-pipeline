@@ -22,11 +22,11 @@ JSON format:
 
 
 def run(
-    csv_preview: str, total_rows: int, model: str = None, span=None
+    csv_preview: str, total_rows: int, model: str = None, span=None, api_key: str = None
 ) -> ValidatorResult:
     if model is None:
         model = MODELS["quality"]
-    client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
     user_msg = f"Validate this CSV data ({total_rows} total rows):\n\n{csv_preview}"
 
     try:

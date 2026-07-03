@@ -1,15 +1,29 @@
 import json
+import logging
 import os
 import sqlite3
 from datetime import datetime
 
 from src.observability.tracer import RunTracer
 
+logger = logging.getLogger(__name__)
+
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "pipeline_runs.db")
 
 
 def _conn():
     return sqlite3.connect(DB_PATH)
+
+
+def _safe_row_to_dict(cols: list, row: tuple) -> dict:
+    """Map column names to row values with schema drift detection."""
+    if len(cols) != len(row):
+        logger.warning(
+            "Column/value length mismatch: %d cols vs %d values — possible schema drift",
+            len(cols),
+            len(row),
+        )
+    return dict(zip(cols, row, strict=False))
 
 
 def init_db():
@@ -180,7 +194,7 @@ def get_runs(limit: int = 50):
         "guardrail_events",
         "status",
     ]
-    return [dict(zip(cols, r, strict=False)) for r in rows]
+    return [_safe_row_to_dict(cols, r) for r in rows]
 
 
 def get_spans(run_id: str):
@@ -207,7 +221,7 @@ def get_spans(run_id: str):
         "error_message",
         "guardrails_fired",
     ]
-    return [dict(zip(cols, r, strict=False)) for r in rows]
+    return [_safe_row_to_dict(cols, r) for r in rows]
 
 
 def get_guardrail_events(limit: int = 100):
@@ -227,7 +241,7 @@ def get_guardrail_events(limit: int = 100):
         "severity",
         "timestamp",
     ]
-    return [dict(zip(cols, r, strict=False)) for r in rows]
+    return [_safe_row_to_dict(cols, r) for r in rows]
 
 
 def get_budget():
@@ -265,4 +279,4 @@ def get_agent_stats():
         "errors",
         "timeouts",
     ]
-    return [dict(zip(cols, r, strict=False)) for r in rows]
+    return [_safe_row_to_dict(cols, r) for r in rows]
