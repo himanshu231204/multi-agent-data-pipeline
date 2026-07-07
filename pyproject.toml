@@ -13,7 +13,7 @@ authors = [
 ]
 keywords = [
     "ai", "agents", "data-pipeline", "csv", "pdf",
-    "anthropic", "claude", "data-engineering", "automation"
+    "anthropic", "data-engineering", "automation"
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -44,6 +44,11 @@ dependencies = [
     "google-cloud-bigquery>=3.0.0",
     "duckdb>=1.0.0",
     "fpdf2>=2.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
 ]
 
 [project.urls]

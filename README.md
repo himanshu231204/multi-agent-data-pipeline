@@ -11,6 +11,7 @@
 
 <br/>
 
+[![Tests](https://github.com/harshitboots/multi-agent-data-pipeline/actions/workflows/test.yml/badge.svg)](https://github.com/harshitboots/multi-agent-data-pipeline/actions/workflows/test.yml)
 [![Version](https://img.shields.io/badge/version-1.2.0-brightgreen?style=flat-square)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://multi-agent-pipeline-demo.streamlit.app)
@@ -656,8 +657,8 @@ gcloud run deploy multi-agent-pipeline \
 
 | Layer | Technology |
 |-------|-----------|
-| AI — complex agents | Claude Sonnet (`claude-sonnet-4-6`) |
-| AI — simple agents | Claude Haiku (`claude-haiku-4-5-20251001`) |
+| AI — complex agents | Anthropic Sonnet (`claude-sonnet-4-6`) |
+| AI — simple agents | Anthropic Haiku (`claude-haiku-4-5-20251001`) |
 | Router Engine | Custom — `src/router.py` |
 | PDF Report | fpdf2 — custom branded multi-section layout |
 | Language | Python 3.10+ |
@@ -734,88 +735,27 @@ gcloud run deploy multi-agent-pipeline \
 - [x] Anonymous run tracking (IP fingerprint)
 - [x] PDF Intelligence Report download
 - [x] Streamlit Cloud deployment
+- [x] GitHub Actions CI/CD — test matrix (3.10/3.11/3.12) + Docker build validation on every PR
 - [ ] `pip install multi-agent-data-pipeline`
 - [ ] MongoDB connector
-- [ ] Redshift connector
 - [ ] Microsoft Fabric connector
 - [ ] REST API — FastAPI wrapper
 - [ ] Agent memory — learn from past runs
 - [ ] Webhook support — trigger via HTTP
 - [ ] Docker image on Docker Hub
-- [ ] GitHub Actions CI/CD
 
 ---
 
 ## Contributing
 
-### Ways to Contribute
+Full guide, dev setup, and connector/agent templates: **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
-#### 🔌 Add a Database Connector
+Quick pointers:
+- 🔌 **Database connectors wanted** — MongoDB (medium), Microsoft Fabric (medium), Elasticsearch (hard)
+- 🤖 **New agent ideas** — Schema Inferencer, Data Lineage Tracker, Duplicate Detector, Language Translator
+- One feature per PR · all tests must pass · CI runs on Python 3.10/3.11/3.12 for every PR
 
-| Database | Difficulty |
-|----------|-----------|
-| MongoDB | Medium |
-| Redshift | Easy |
-| Microsoft Fabric | Medium |
-| Elasticsearch | Hard |
-
-#### 🤖 New Agents
-
-Ideas for new agents:
-- **Schema Inferencer** — auto-detect and document schema
-- **Data Lineage Tracker** — track where each column came from
-- **Duplicate Detector** — find near-duplicate records
-- **Language Translator** — translate non-English fields
-
-#### Adding a Connector
-
-```python
-# src/connectors/your_db.py
-
-def connect(host: str, port: int, database: str, user: str, password: str): ...
-def list_tables(host: str, ...) -> list: ...
-def fetch_table(host: str, ..., table: str, limit: int = 1000) -> pd.DataFrame: ...
-```
-
-#### Adding an Agent
-
-```python
-# src/agents/your_agent.py
-
-SYSTEM_PROMPT = """You are a [role] agent.
-Respond ONLY with valid JSON. No markdown. No explanation."""
-
-def run(csv_preview: str, total_rows: int,
-        model: str = None, span=None, api_key: str = None) -> YourAgentResult:
-    _client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
-    response = _client.messages.create(model=model, ...)
-    if span:
-        span.finish(input_tokens=response.usage.input_tokens,
-                    output_tokens=response.usage.output_tokens,
-                    model=model, raw_response=..., parsed_output=..., parse_ok=True)
-    return result
-```
-
-### Getting Started
-
-```bash
-git clone https://github.com/YOUR_USERNAME/multi-agent-data-pipeline.git
-cd multi-agent-data-pipeline
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-git checkout -b feature/your-feature
-# make changes
-pytest tests/ -v
-git push origin feature/your-feature
-# open a PR
-```
-
-### Contribution Guidelines
-
-- One feature per PR
-- All 16 tests must pass
-- Follow existing agent structure — same `run()` signature, same `span.finish()` pattern
-- Update README if adding a connector or agent
+Found a security issue? See **[SECURITY.md](SECURITY.md)** instead of opening a public issue.
 
 ---
 
@@ -873,6 +813,6 @@ MIT License — free to use, modify and distribute. See [LICENSE](LICENSE) for f
 
 <br/>
 
-**Built with Claude AI · Powered by Britcore.AI · Made with ❤️ for the data engineering community**
+**Powered by Britcore.AI · Made with ❤️ for the data engineering community**
 
 </div>
