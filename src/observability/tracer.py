@@ -1,7 +1,7 @@
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Optional
+
 from src.cost_config import compute_cost_gbp
 
 
@@ -24,9 +24,16 @@ class AgentSpan:
     guardrails_fired: list = field(default_factory=list)
     started_at: float = field(default_factory=time.time)
 
-    def finish(self, input_tokens: int, output_tokens: int, model: str,
-               raw_response: str, parsed_output: str, parse_ok: bool = True,
-               error_message: str = ""):
+    def finish(
+        self,
+        input_tokens: int,
+        output_tokens: int,
+        model: str,
+        raw_response: str,
+        parsed_output: str,
+        parse_ok: bool = True,
+        error_message: str = "",
+    ):
         self.latency_ms = int((time.time() - self.started_at) * 1000)
         self.input_tokens = input_tokens
         self.output_tokens = output_tokens
@@ -53,8 +60,13 @@ class RunTracer:
         self.spans: list[AgentSpan] = []
         self.started_at = time.time()
 
-    def start_span(self, agent_name: str, model: str,
-                   system_prompt: str = "", user_message: str = "") -> AgentSpan:
+    def start_span(
+        self,
+        agent_name: str,
+        model: str,
+        system_prompt: str = "",
+        user_message: str = "",
+    ) -> AgentSpan:
         span = AgentSpan(
             run_id=self.run_id,
             agent_name=agent_name,

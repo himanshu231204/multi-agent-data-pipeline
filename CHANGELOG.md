@@ -4,6 +4,46 @@ All notable changes to Multi-Agent Data Pipeline are documented here.
 
 ---
 
+## [2.1.0] — 2026-07-02
+
+### What's New
+
+#### CI/CD Pipeline
+- GitHub Actions CI: lint (ruff) + test matrix (Python 3.10, 3.11, 3.12) on every push/PR to `main`
+- GitHub Actions CD: integration tests on every push to `development`/`dev` branch
+- Streamlit Cloud auto-deploys from the `dev` branch
+
+#### Code Quality
+- Added **Ruff** for linting and formatting — replaces flake8, isort, black
+- Auto-fixed 130+ lint issues across 29 files
+- Added ruff configuration to `pyproject.toml` (line-length, select rules, isort)
+
+#### Integration Tests
+- 19 new integration tests in `tests/test_integration.py`:
+  - 5 router logic tests (Haiku/Sonnet routing, disabled routing, all CSV agents)
+  - 6 guardrail engine tests (budget cap, parse failures, anomaly score)
+  - 3 pipeline orchestration tests (end-to-end with mocked LLM, telemetry, missing file)
+  - 5 import smoke tests (CLI, pipeline, router, guardrails, models)
+- Total test count: 18 → 44
+
+### Files Added
+- `.github/workflows/ci.yml` — CI pipeline
+- `.github/workflows/cd-dev.yml` — CD pipeline for development
+- `tests/test_integration.py` — Integration test suite
+
+### Files Modified
+- `pyproject.toml` — Added ruff configuration
+- `tests/test_pipeline.py` — Added `@pytest.mark.skipif` to API-key test for CI
+- `src/agents/pii_anonymiser.py` — Fixed loop variable binding (B023)
+- `src/pipeline.py` — Removed unused variable (F841)
+- `src/report_generator.py` — Removed unused import and variable (F401, F841)
+- `src/auth/credits.py` — Added `strict=False` to `zip()` (B905)
+- `src/observability/store.py` — Added `strict=False` to `zip()` (B905)
+- `src/connectors/postgres.py` — Fixed trailing whitespace (W291)
+- 29 files reformatted by `ruff format`
+
+---
+
 ## [2.0.0] — 2026-06-26
 
 ### What's new

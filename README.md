@@ -11,7 +11,7 @@
 
 <br/>
 
-[![Version](https://img.shields.io/badge/version-1.2.0-brightgreen?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.1.0-brightgreen?style=flat-square)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://multi-agent-pipeline-demo.streamlit.app)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-red?style=flat-square&logo=streamlit&logoColor=white)](https://streamlit.io)
@@ -27,7 +27,7 @@
 
 <br/>
 
-**[🚀 Quick Start](#quick-start) · [⚡ What's New in v1.2](#whats-new-in-v12) · [🔀 Router Engine](#router-engine) · [📄 PDF Intelligence](#pdf-intelligence-pipeline) · [📡 Observability](#observability-dashboard) · [🔌 Connectors](#data-sources) · [🤝 Contributing](#contributing)**
+**[🚀 Quick Start](#quick-start) · [⚡ What's New in v2.1](#whats-new-in-v21) · [🔀 Router Engine](#router-engine) · [📄 PDF Intelligence](#pdf-intelligence-pipeline) · [📡 Observability](#observability-dashboard) · [🔌 Connectors](#data-sources) · [🤝 Contributing](#contributing)**
 
 <br/>
 
@@ -39,12 +39,23 @@
 
 ---
 
-## What's New in v1.2
+## What's New in v2.1
 
-> **v1.2.0 — June 2026** · [Full changelog](#changelog)
+> **v2.1.0 — July 2026** · [Full changelog](#changelog)
 
 | Feature | Detail |
 |---------|--------|
+| **CI/CD Pipeline** | GitHub Actions — lint (ruff) + test matrix (Python 3.10-3.12) on every push/PR to main |
+| **Development CD** | Integration tests run on every push to `dev` branch. Streamlit Cloud auto-deploys from dev |
+| **Code Quality — Ruff** | Added ruff for linting and formatting. 130+ issues auto-fixed across 29 files |
+| **Integration Tests** | 19 new tests covering router logic, guardrail engine, pipeline orchestration, and import smoke tests |
+| **Test Suite Expanded** | From 18 to 44 tests — unit + integration + regression coverage |
+
+| Feature | Detail |
+|---------|--------|
+| **Modular UI Architecture** | `app.py` refactored from 1869 lines to ~50 lines. Shared components in `src/ui/`, pages in `src/pages/` |
+| **Separate Page Modules** | CSV, PDF, and Database pages are now independent files with `render()` functions |
+| **Cleaner Codebase** | Easier to maintain, test, and extend — add new pages without touching the orchestrator |
 | **PDF Intelligence Report** | Download the full 5-section analysis as a formatted PDF — not JSON. Cover page, entities, risk badges, action items, executive summary |
 | **VPN / Proxy Block** | Automatic VPN and hosting IP detection via ip-api.com. Blocked users see a full-screen denial page |
 | **Anonymous Run Tracking** | SHA-256 IP + User-Agent fingerprint persisted to SQLite. 2 free runs survive page refresh — no signup required |
@@ -90,39 +101,46 @@ Each agent has a single job, its own reasoning, and structured JSON output.
 The Router Engine assigns the cheapest model that can handle each task.  
 Every run is traced, costed, and persisted for full observability.
 
-```
-                    Your data (CSV · PDF · Database)
-                                  ↓
-                    ┌─────────────────────────┐
-                    │  🔒 Access Control Layer  │
-                    │  VPN block · IP fingerprint · Credit gate  │
-                    └─────────────┬───────────┘
-                                  ↓
-                    ┌─────────────────────────┐
-                    │   🧭 Router Engine        │  ← classifies task complexity
-                    │   With Router / Without   │  ← mode toggle
-                    └──────┬──────────┬────────┘
-                           │          │
-              ┌────────────▼──┐  ┌────▼──────────────┐
-              │ CSV Pipeline   │  │  PDF Pipeline      │
-              │ 6 Agents       │  │  5 Agents          │
-              │ Haiku + Sonnet │  │  Haiku → Sonnet    │
-              └────────┬───────┘  └────────┬───────────┘
-                       │                   │
-              ┌────────▼───────────────────▼──────┐
-              │  🔬 Observability & Telemetry       │
-              │  RunTracer · Cost GBP · Guardrails  │
-              └────────────────┬──────────────────┘
-                               │
-              ┌────────────────▼──────────────────┐
-              │  💾 SQLite  (Run History · anon_visitors)  │
-              └────────────────┬──────────────────┘
-                               │
-       ┌───────────────────────▼───────────────────────┐
-       │  📤 Output                                      │
-       │  Dashboard (Compare · Monitor · Cost · Guards)  │
-       │  PDF Intelligence Report Download               │
-       └────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    Input["Your data\nCSV · PDF · Database"]
+    
+    subgraph Access["🔒 Access Control Layer"]
+        VPN["VPN block"]
+        IP["IP fingerprint"]
+        Credits["Credit gate"]
+    end
+    
+    subgraph Router["🧭 Router Engine"]
+        Classify["Classifies task complexity"]
+        Toggle["Mode: With Router / Without"]
+    end
+    
+    subgraph Pipelines["Pipelines"]
+        CSV["CSV Pipeline\n6 Agents\nHaiku + Sonnet"]
+        PDF["PDF Pipeline\n5 Agents\nHaiku → Sonnet"]
+    end
+    
+    subgraph Observability["🔬 Observability & Telemetry"]
+        Tracer["RunTracer"]
+        Cost["Cost GBP"]
+        Guardrails["Guardrails"]
+    end
+    
+    Storage["💾 SQLite\nRun History · anon_visitors"]
+    
+    subgraph Output["📤 Output"]
+        Dashboard["Dashboard\nCompare · Monitor · Cost · Guards"]
+        Report["PDF Intelligence Report Download"]
+    end
+    
+    Input --> Access --> Router
+    Router --> CSV
+    Router --> PDF
+    CSV --> Observability
+    PDF --> Observability
+    Observability --> Storage
+    Storage --> Output
 ```
 
 No config files. No rigid schemas. No rules to write and maintain.
@@ -389,53 +407,101 @@ The hash is stored in SQLite — never the raw IP. Runs persist across page refr
 
 ## Architecture
 
-```
-multi-agent-data-pipeline/
-├── app.py                        # Main Streamlit UI — router, BYOK, VPN block, PDF pipeline
-├── pages/
-│   └── observability.py          # 7-tab observability dashboard
-├── src/
-│   ├── agents/
-│   │   ├── cleaner.py            # CSV cleaning — Haiku
-│   │   ├── pii_anonymiser.py     # PII detection — Haiku
-│   │   ├── validator.py          # Schema validation — Sonnet
-│   │   ├── transformer.py        # Data transformation — Haiku
-│   │   ├── anomaly.py            # Anomaly detection — Sonnet
-│   │   ├── summariser.py         # Business summary — Sonnet
-│   │   ├── pdf_parser.py         # PDF structure analysis — Haiku
-│   │   ├── entity_extractor.py   # Named entity extraction — Haiku
-│   │   ├── risk_detector.py      # Risk and PII detection — Sonnet
-│   │   ├── action_extractor.py   # Action items and decisions — Sonnet
-│   │   └── (pdf summariser via summariser.py)
-│   ├── auth/
-│   │   ├── credits.py            # Credit tracking — anonymous (IP fingerprint) + GitHub + BYOK
-│   │   └── github_api.py         # GitHub API — star/fork verification
-│   ├── connectors/
-│   │   ├── databricks.py         # Azure Databricks
-│   │   ├── snowflake_conn.py     # Snowflake
-│   │   ├── postgres.py           # PostgreSQL
-│   │   ├── mysql.py              # MySQL
-│   │   ├── bigquery.py           # BigQuery
-│   │   └── duckdb_conn.py        # DuckDB
-│   ├── observability/
-│   │   ├── tracer.py             # RunTracer + AgentSpan — tokens, cost, latency, prompts
-│   │   ├── store.py              # SQLite persistence — runs, spans, guardrail events
-│   │   ├── guardrails.py         # GuardrailEngine — budget, timeout, PII, parse failures
-│   │   └── metrics.py            # Analytics queries — cost trend, agent performance
-│   ├── report_generator.py       # fpdf2 PDF report builder — 5-section branded output
-│   ├── cost_config.py            # Model pricing (GBP), token limits, timeouts
-│   ├── router.py                 # Router engine — assigns cheapest model per agent
-│   ├── models.py                 # Pydantic schemas — all agent result types
-│   └── pipeline.py               # CSV pipeline orchestrator
-├── demo/
-│   ├── sample_data.csv           # Demo CSV with intentional data quality issues
-│   └── sample_report.pdf         # Demo PDF for the PDF pipeline
-├── .streamlit/
-│   └── config.toml               # Dark theme, CORS settings for cloud deployment
-├── tests/
-│   └── test_pipeline.py          # 16 passing tests
-├── requirements.txt
-└── .env.example
+```mermaid
+graph TB
+    Root["multi-agent-data-pipeline"]
+    
+    App["app.py\nThin orchestrator (~50 lines)"]
+    
+    subgraph pages["pages/"]
+        ObservabilityPage["observability.py\n7-tab observability dashboard"]
+    end
+    
+    subgraph src["src/"]
+        subgraph ui["ui/ — Shared UI layer"]
+            Styles["styles.py\nAll CSS styles (~700 lines)"]
+            Layout["layout.py\nTopbar, hero section, agents strip, footer"]
+            AuthUI["auth.py\nGitHub auth, BYOK, VPN block, fingerprinting"]
+            Helpers["helpers.py\nResult tabs, cost card, comparison table"]
+        end
+        
+        subgraph pages_src["pages/ — Page renderers"]
+            CSVPage["csv_pipeline.py\nCSV pipeline page"]
+            PDFPage["pdf_intelligence.py\nPDF intelligence page"]
+            DBPage["db_connectors.py\nDatabase connectors page"]
+        end
+        
+        subgraph agents["agents/ — 11 AI agents"]
+            Cleaner["cleaner.py\nCSV cleaning — Haiku"]
+            PII["pii_anonymiser.py\nPII detection — Haiku"]
+            Validator["validator.py\nSchema validation — Sonnet"]
+            Transformer["transformer.py\nData transformation — Haiku"]
+            Anomaly["anomaly.py\nAnomaly detection — Sonnet"]
+            Summariser["summariser.py\nBusiness summary — Sonnet"]
+            PDFParser["pdf_parser.py\nPDF structure analysis — Haiku"]
+            EntityExt["entity_extractor.py\nNamed entity extraction — Haiku"]
+            RiskDet["risk_detector.py\nRisk and PII detection — Sonnet"]
+            ActionExt["action_extractor.py\nAction items and decisions — Sonnet"]
+        end
+        
+        subgraph auth_src["auth/"]
+            Credits["credits.py\nCredit tracking — anonymous + GitHub + BYOK"]
+            GitHubAPI["github_api.py\nGitHub API — star/fork verification"]
+        end
+        
+        subgraph connectors["connectors/ — 7 database connectors"]
+            Databricks["databricks.py\nAzure Databricks"]
+            Snowflake["snowflake_conn.py\nSnowflake"]
+            Postgres["postgres.py\nPostgreSQL"]
+            MySQL["mysql.py\nMySQL"]
+            BigQuery["bigquery.py\nBigQuery"]
+            DuckDB["duckdb_conn.py\nDuckDB"]
+        end
+        
+        subgraph observability["observability/"]
+            Tracer["tracer.py\nRunTracer + AgentSpan"]
+            Store["store.py\nSQLite persistence"]
+            Guardrails["guardrails.py\nGuardrailEngine"]
+            Metrics["metrics.py\nAnalytics queries"]
+        end
+        
+        ReportGen["report_generator.py\nfpdf2 PDF report builder"]
+        CostConfig["cost_config.py\nModel pricing, token limits, timeouts"]
+        Router["router.py\nRouter engine — model assignment"]
+        Models["models.py\nPydantic schemas"]
+        Pipeline["pipeline.py\nCSV pipeline orchestrator"]
+    end
+    
+    subgraph demo["demo/"]
+        SampleCSV["sample_data.csv\nDemo CSV with data quality issues"]
+        SamplePDF["sample_report.pdf\nDemo PDF"]
+    end
+    
+    subgraph ci["CI/CD"]
+        CI["ci.yml\nLint + Test Matrix"]
+        CD["cd-dev.yml\nIntegration Tests"]
+    end
+    
+    subgraph streamlit[".streamlit/"]
+        Config["config.toml\nDark theme, CORS settings"]
+    end
+    
+    subgraph tests_dir["tests/"]
+        TestPipeline["test_pipeline.py\n25 unit tests"]
+        TestIntegration["test_integration.py\n19 integration tests"]
+    end
+    
+    Requirements["requirements.txt"]
+    EnvExample[".env.example"]
+    
+    Root --> App
+    Root --> pages
+    Root --> src
+    Root --> demo
+    Root --> streamlit
+    Root --> tests_dir
+    Root --> Requirements
+    Root --> EnvExample
 ```
 
 ---
@@ -639,6 +705,47 @@ gcloud run deploy multi-agent-pipeline \
 
 ---
 
+## CI/CD Pipeline
+
+### GitHub Actions
+
+The project uses GitHub Actions for continuous integration and deployment.
+
+#### CI (`ci.yml`) — Runs on push to `main`/`master` and PRs
+
+| Job | What it does |
+|-----|-------------|
+| **lint** | Runs `ruff check .` and `ruff format --check .` (Python 3.12) |
+| **test** | Runs `pytest tests/test_pipeline.py tests/test_integration.py` across Python 3.10, 3.11, 3.12 |
+
+#### CD (`cd-dev.yml`) — Runs on push to `development`/`dev`
+
+| Job | What it does |
+|-----|-------------|
+| **integration-tests** | Runs `pytest tests/test_integration.py` (Python 3.12) |
+| **deploy** | Streamlit Cloud auto-deploys from the `dev` branch |
+
+### Local Development
+
+```bash
+# Lint
+ruff check .
+
+# Format
+ruff format .
+
+# Run all tests
+pytest tests/ -v
+```
+
+### Adding to CI
+
+1. Add `ANTHROPIC_API_KEY` as a repository secret in GitHub Settings → Secrets
+2. Push to `main` to trigger CI
+3. Push to `dev` to trigger CD + Streamlit Cloud deploy
+
+---
+
 ### Environment Variables
 
 | Variable | Required | Description |
@@ -667,11 +774,31 @@ gcloud run deploy multi-agent-pipeline \
 | Persistence | SQLite (`pipeline_runs.db`) |
 | Access Control | ip-api.com (VPN detection), SHA-256 fingerprinting |
 | Connectors | Databricks SDK, Snowflake, psycopg2, mysql-connector, BigQuery, DuckDB |
-| Testing | pytest (16 passing) |
+| Linting & Formatting | Ruff (check + format) |
+| CI/CD | GitHub Actions — lint + test matrix |
+| Testing | pytest (44 passing) |
 
 ---
 
 ## Changelog
+
+### v1.3.0 — July 2026
+
+**Changed**
+- **Modular UI architecture** — `app.py` refactored from 1869 lines to ~50 lines
+- Shared UI components extracted to `src/ui/` (styles, layout, auth, helpers)
+- Page-specific code extracted to `src/pages/` (csv_pipeline, pdf_intelligence, db_connectors)
+- Each page module exports a single `render(visitor_fp)` function
+- `app.py` is now a thin orchestrator: imports, page config, VPN check, mode dispatch
+
+**Architecture**
+- `src/ui/styles.py` — all CSS (~700 lines)
+- `src/ui/layout.py` — topbar, hero section, agents strip, footer
+- `src/ui/auth.py` — GitHub auth, BYOK, VPN block, fingerprinting
+- `src/ui/helpers.py` — result tabs, cost card, comparison table
+- `src/pages/csv_pipeline.py` — CSV pipeline page
+- `src/pages/pdf_intelligence.py` — PDF intelligence page
+- `src/pages/db_connectors.py` — database connectors page
 
 ### v1.2.0 — June 2026
 
@@ -717,7 +844,7 @@ gcloud run deploy multi-agent-pipeline \
 - Database connectors — Databricks, Snowflake, PostgreSQL, MySQL, BigQuery, DuckDB
 - Streamlit UI — dark theme
 - CLI entrypoint
-- 16 unit tests
+- 18 unit tests
 
 ---
 
@@ -734,6 +861,9 @@ gcloud run deploy multi-agent-pipeline \
 - [x] Anonymous run tracking (IP fingerprint)
 - [x] PDF Intelligence Report download
 - [x] Streamlit Cloud deployment
+- [x] GitHub Actions CI/CD
+- [x] Ruff linting and formatting
+- [x] Integration test suite (router, guardrails, pipeline)
 - [ ] `pip install multi-agent-data-pipeline`
 - [ ] MongoDB connector
 - [ ] Redshift connector
@@ -742,7 +872,6 @@ gcloud run deploy multi-agent-pipeline \
 - [ ] Agent memory — learn from past runs
 - [ ] Webhook support — trigger via HTTP
 - [ ] Docker image on Docker Hub
-- [ ] GitHub Actions CI/CD
 
 ---
 
@@ -813,7 +942,8 @@ git push origin feature/your-feature
 ### Contribution Guidelines
 
 - One feature per PR
-- All 16 tests must pass
+- All 44 tests must pass (`pytest tests/ -v`)
+- Run `ruff check .` and `ruff format .` before committing
 - Follow existing agent structure — same `run()` signature, same `span.finish()` pattern
 - Update README if adding a connector or agent
 
@@ -822,11 +952,14 @@ git push origin feature/your-feature
 ## Running Tests
 
 ```bash
-pytest tests/ -v
+pytest tests/ -v                    # All tests
+pytest tests/test_pipeline.py -v    # Unit tests only
+pytest tests/test_integration.py -v # Integration tests only
+pytest -k test_router               # Single test by name
 ```
 
 ```
-16 passed in 0.6s
+44 passed in 4.7s
 ```
 
 ---
