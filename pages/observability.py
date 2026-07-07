@@ -1,30 +1,18 @@
-import pandas as pd
 import streamlit as st
-
-from src.observability.metrics import (
-    agent_performance_table,
-    cost_trend,
-    model_usage_breakdown,
-    run_quality_score,
-    summary_stats,
-)
-from src.observability.store import (
-    get_budget,
-    get_guardrail_events,
-    get_runs,
-    get_spans,
-    init_db,
-)
+import pandas as pd
+import json
+from src.observability.store import get_runs, get_spans, get_guardrail_events, get_budget, init_db
+from src.observability.metrics import summary_stats, cost_trend, agent_performance_table, model_usage_breakdown, run_quality_score
+from src.observability.guardrails import GuardrailEngine
 
 st.set_page_config(
     page_title="Observability · Multi-Agent Pipeline",
     page_icon="📡",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="collapsed"
 )
 
-st.markdown(
-    """
+st.markdown("""
 <style>
 html, body, [class*="css"], .stApp { background-color: #060910 !important; color: #e2e8f0 !important; }
 header[data-testid="stHeader"] { display: none !important; }
@@ -37,15 +25,12 @@ div[data-testid="stMetricValue"] { color: #00ff88 !important; font-family: monos
 .stTabs [data-baseweb="tab"] { font-family: monospace !important; font-size: 11px !important; color: #94a3b8 !important; }
 .stTabs [aria-selected="true"] { color: #38bdf8 !important; border-bottom: 2px solid #38bdf8 !important; }
 </style>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
 init_db()
 
 # ── GUIDE STYLES ─────────────────────────────────────────────────────────────
-st.markdown(
-    """
+st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Space+Mono:wght@400;700&display=swap');
 html, body, [class*="css"], .stApp { background: #f8fafc !important; color: #0f172a !important; font-family: 'Inter', sans-serif !important; }
@@ -172,15 +157,12 @@ div[data-testid="stMetricLabel"] { color: #64748b !important; font-size: 11px !i
 .sev-warn { color: #fbbf24; }
 .sev-err  { color: #f87171; }
 </style>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
 # ── HEADER + GUIDE BANNER ────────────────────────────────────────────────────
 runs_count = len(get_runs(limit=100))
 
-st.markdown(
-    f"""
+st.markdown(f"""
 <div class="guide-banner">
 <div class="guide-banner-top">
 <div>
@@ -279,36 +261,19 @@ st.markdown(
 </div>
 </div>
 </div>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
 # ── TABS ─────────────────────────────────────────────────────────────────────
-(
-    tab_compare,
-    tab_live,
-    tab_history,
-    tab_cost,
-    tab_agents,
-    tab_guardrails,
-    tab_settings,
-) = st.tabs(
-    [
-        "⚖️ Compare Runs",
-        "📡 Live Monitor",
-        "📋 Run History",
-        "💰 Cost Analytics",
-        "🎯 Agent Performance",
-        "🛡️ Guardrails Log",
-        "⚙️ Settings",
-    ]
-)
+tab_compare, tab_live, tab_history, tab_cost, tab_agents, tab_guardrails, tab_settings = st.tabs([
+    "⚖️ Compare Runs", "📡 Live Monitor", "📋 Run History", "💰 Cost Analytics",
+    "🎯 Agent Performance", "🛡️ Guardrails Log", "⚙️ Settings"
+])
 
 # ── TAB 0: COMPARE RUNS ──────────────────────────────────────────────────────
 with tab_compare:
     all_runs = get_runs(limit=100)
     baseline_runs = [r for r in all_runs if r["mode"] == "baseline"]
-    router_runs = [r for r in all_runs if r["mode"] == "router"]
+    router_runs   = [r for r in all_runs if r["mode"] == "router"]
 
     if not all_runs:
         st.info("No runs recorded yet. Run the pipeline from the main page first.")
@@ -324,105 +289,71 @@ with tab_compare:
         spans = get_spans(r["run_id"])
         if spans:
             st.markdown("#### Agent breakdown")
-            df_single = pd.DataFrame(
-                [
-                    {
-                        "Agent": s["agent_name"],
-                        "Model": s["model"].split("-")[1]
-                        if "-" in s["model"]
-                        else s["model"],
-                        "Tokens In": s["input_tokens"],
-                        "Tokens Out": s["output_tokens"],
-                        "Cost (GBP)": f"{s['cost_gbp']:.5f}",
-                        "Latency (ms)": s["latency_ms"],
-                        "Parse OK": "✓" if s["parse_ok"] else "✗",
-                    }
-                    for s in spans
-                ]
-            )
+            df_single = pd.DataFrame([{
+                "Agent": s["agent_name"], "Model": s["model"].split("-")[1] if "-" in s["model"] else s["model"],
+                "Tokens In": s["input_tokens"], "Tokens Out": s["output_tokens"],
+                "Cost (GBP)": f"{s['cost_gbp']:.5f}", "Latency (ms)": s["latency_ms"],
+                "Parse OK": "✓" if s["parse_ok"] else "✗"
+            } for s in spans])
             st.dataframe(df_single, use_container_width=True, hide_index=True)
-        st.info(
-            "Run the pipeline again with the **other mode** (Baseline ↔ Router) to unlock side-by-side comparison."
-        )
+        st.info("Run the pipeline again with the **other mode** (Baseline ↔ Router) to unlock side-by-side comparison.")
     else:
         # pick the most recent baseline vs most recent router run
         b = baseline_runs[0] if baseline_runs else None
-        r = router_runs[0] if router_runs else None
+        r = router_runs[0]   if router_runs   else None
 
         if b and r:
             st.markdown("### ⚖️ Baseline vs Router — side-by-side")
             col_b, col_r = st.columns(2)
             for col, run, label, color in [
                 (col_b, b, "Without Router (Baseline)", "#0ea5e9"),
-                (col_r, r, "With Router", "#7c3aed"),
+                (col_r, r, "With Router",               "#7c3aed"),
             ]:
                 with col:
                     st.markdown(
                         f'<div style="border-top:4px solid {color};border-radius:12px 12px 0 0;'
                         f'background:#f8fafc;padding:14px 18px 6px;">'
                         f'<strong style="color:{color};font-size:14px;">{label}</strong></div>',
-                        unsafe_allow_html=True,
+                        unsafe_allow_html=True
                     )
                     m1, m2, m3 = st.columns(3)
                     m1.metric("Cost (GBP)", f"{run['total_cost_gbp']:.5f}")
-                    m2.metric("Latency", f"{run['total_latency_ms']}ms")
-                    m3.metric("Source", run["source"])
+                    m2.metric("Latency",    f"{run['total_latency_ms']}ms")
+                    m3.metric("Source",     run["source"])
                     spans = get_spans(run["run_id"])
                     if spans:
-                        haiku_count = sum(1 for s in spans if "haiku" in s["model"])
+                        haiku_count  = sum(1 for s in spans if "haiku"  in s["model"])
                         sonnet_count = sum(1 for s in spans if "sonnet" in s["model"])
-                        total_tokens = sum(
-                            s["input_tokens"] + s["output_tokens"] for s in spans
-                        )
+                        total_tokens = sum(s["input_tokens"] + s["output_tokens"] for s in spans)
                         st.markdown(
                             f"**Models:** {haiku_count}× Haiku · {sonnet_count}× Sonnet  "
                             f"**Tokens:** {total_tokens:,}  "
                             f"**Parse failures:** {run['parse_failures']}"
                         )
-                        df_spans = pd.DataFrame(
-                            [
-                                {
-                                    "Agent": s["agent_name"],
-                                    "Model": "Haiku"
-                                    if "haiku" in s["model"]
-                                    else "Sonnet",
-                                    "Cost": f"{s['cost_gbp']:.5f}",
-                                    "ms": s["latency_ms"],
-                                    "✓": "✓" if s["parse_ok"] else "✗",
-                                }
-                                for s in spans
-                            ]
-                        )
-                        st.dataframe(
-                            df_spans, use_container_width=True, hide_index=True
-                        )
+                        df_spans = pd.DataFrame([{
+                            "Agent": s["agent_name"],
+                            "Model": "Haiku" if "haiku" in s["model"] else "Sonnet",
+                            "Cost": f"{s['cost_gbp']:.5f}",
+                            "ms": s["latency_ms"],
+                            "✓": "✓" if s["parse_ok"] else "✗"
+                        } for s in spans])
+                        st.dataframe(df_spans, use_container_width=True, hide_index=True)
 
             # Savings summary
             if b["total_cost_gbp"] > 0:
                 cost_saved = b["total_cost_gbp"] - r["total_cost_gbp"]
-                cost_pct = cost_saved / b["total_cost_gbp"] * 100
-                lat_saved = b["total_latency_ms"] - r["total_latency_ms"]
-                lat_pct = (
-                    lat_saved / b["total_latency_ms"] * 100
-                    if b["total_latency_ms"] > 0
-                    else 0
-                )
+                cost_pct   = cost_saved / b["total_cost_gbp"] * 100
+                lat_saved  = b["total_latency_ms"] - r["total_latency_ms"]
+                lat_pct    = lat_saved / b["total_latency_ms"] * 100 if b["total_latency_ms"] > 0 else 0
                 st.markdown("---")
                 sc1, sc2, sc3 = st.columns(3)
                 sc1.metric("Cost saved", f"GBP {cost_saved:.5f}", f"{cost_pct:.0f}%")
                 sc2.metric("Latency saved", f"{lat_saved}ms", f"{lat_pct:.0f}%")
-                sc3.metric(
-                    "Parse failures delta",
-                    f"{r['parse_failures'] - b['parse_failures']:+d}",
-                )
+                sc3.metric("Parse failures delta", f"{r['parse_failures'] - b['parse_failures']:+d}")
         elif b:
-            st.info(
-                "Only **Baseline** runs found. Run the pipeline once **With Router** to unlock comparison."
-            )
+            st.info("Only **Baseline** runs found. Run the pipeline once **With Router** to unlock comparison.")
         else:
-            st.info(
-                "Only **Router** runs found. Run the pipeline once **Without Router** to unlock comparison."
-            )
+            st.info("Only **Router** runs found. Run the pipeline once **Without Router** to unlock comparison.")
 
 # ── TAB 1: LIVE MONITOR ──────────────────────────────────────────────────────
 with tab_live:
@@ -450,9 +381,7 @@ with tab_live:
                 bar_frac = s["latency_ms"] / max_lat
                 status_icon = "✓" if s["parse_ok"] else "✗"
                 timeout_icon = " ⏱️ TIMEOUT" if s["status"] == "timeout" else ""
-                model_short = (
-                    s["model"].split("-")[1] if "-" in s["model"] else s["model"]
-                )
+                model_short = s["model"].split("-")[1] if "-" in s["model"] else s["model"]
                 st.markdown(
                     f"`{status_icon}` **{s['agent_name']}**  "
                     f"`{s['latency_ms']}ms`  `GBP {s['cost_gbp']:.5f}`  "
@@ -462,17 +391,13 @@ with tab_live:
 
             st.markdown("#### Agent Inspector")
             agent_names = [s["agent_name"] for s in spans]
-            selected = st.selectbox(
-                "Select agent to inspect", agent_names, key="inspector_select"
-            )
+            selected = st.selectbox("Select agent to inspect", agent_names, key="inspector_select")
             span = next(s for s in spans if s["agent_name"] == selected)
 
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown(f"**Model:** {span['model']}")
-                st.markdown(
-                    f"**Tokens in:** {span['input_tokens']}  **out:** {span['output_tokens']}"
-                )
+                st.markdown(f"**Tokens in:** {span['input_tokens']}  **out:** {span['output_tokens']}")
                 st.markdown(f"**Cost:** GBP {span['cost_gbp']:.5f}")
                 st.markdown(f"**Latency:** {span['latency_ms']}ms")
                 st.markdown(f"**Parse ok:** {'Yes' if span['parse_ok'] else 'FAILED'}")
@@ -506,21 +431,9 @@ with tab_history:
         df_runs = pd.DataFrame(runs)
         df_runs["quality"] = [run_quality_score(r["run_id"]) for r in runs]
         df_runs["cost_gbp"] = df_runs["total_cost_gbp"].map(lambda x: f"GBP {x:.5f}")
-        df_runs["latency_s"] = (df_runs["total_latency_ms"] / 1000).map(
-            lambda x: f"{x:.1f}s"
-        )
-        display_cols = [
-            "run_id",
-            "timestamp",
-            "source",
-            "mode",
-            "cost_gbp",
-            "latency_s",
-            "parse_failures",
-            "guardrail_events",
-            "quality",
-            "status",
-        ]
+        df_runs["latency_s"] = (df_runs["total_latency_ms"] / 1000).map(lambda x: f"{x:.1f}s")
+        display_cols = ["run_id", "timestamp", "source", "mode", "cost_gbp",
+                        "latency_s", "parse_failures", "guardrail_events", "quality", "status"]
         st.dataframe(df_runs[display_cols], use_container_width=True, hide_index=True)
 
         st.markdown("#### Inspect a run")
@@ -530,24 +443,11 @@ with tab_history:
             spans = get_spans(sel_run)
             if spans:
                 df_spans = pd.DataFrame(spans)
-                df_spans["cost_gbp"] = df_spans["cost_gbp"].map(
-                    lambda x: f"GBP {x:.5f}"
-                )
+                df_spans["cost_gbp"] = df_spans["cost_gbp"].map(lambda x: f"GBP {x:.5f}")
                 st.dataframe(
-                    df_spans[
-                        [
-                            "agent_name",
-                            "model",
-                            "input_tokens",
-                            "output_tokens",
-                            "cost_gbp",
-                            "latency_ms",
-                            "status",
-                            "parse_ok",
-                        ]
-                    ],
-                    use_container_width=True,
-                    hide_index=True,
+                    df_spans[["agent_name", "model", "input_tokens", "output_tokens",
+                               "cost_gbp", "latency_ms", "status", "parse_ok"]],
+                    use_container_width=True, hide_index=True
                 )
 
 # ── TAB 3: COST ANALYTICS ────────────────────────────────────────────────────
@@ -575,18 +475,12 @@ with tab_cost:
     total_model = model_breakdown["haiku_gbp"] + model_breakdown["sonnet_gbp"]
     if total_model > 0:
         haiku_pct = model_breakdown["haiku_gbp"] / total_model * 100
-        st.markdown(
-            f"Haiku: {haiku_pct:.0f}% of spend  |  Sonnet: {100 - haiku_pct:.0f}%"
-        )
+        st.markdown(f"Haiku: {haiku_pct:.0f}% of spend  |  Sonnet: {100 - haiku_pct:.0f}%")
 
     runs = get_runs(200)
     if runs:
         st.markdown("#### Cost by mode (baseline vs routed)")
-        df_mode = (
-            pd.DataFrame(runs)
-            .groupby("mode")["total_cost_gbp"]
-            .agg(["sum", "mean", "count"])
-        )
+        df_mode = pd.DataFrame(runs).groupby("mode")["total_cost_gbp"].agg(["sum", "mean", "count"])
         df_mode.columns = ["Total GBP", "Avg GBP", "Runs"]
         st.dataframe(df_mode, use_container_width=True)
 
@@ -618,21 +512,17 @@ with tab_guardrails:
     else:
         for e in events:
             severity = e.get("severity", "info")
-            icon = {"critical": "🔴", "warning": "🟡", "info": "🔵"}.get(severity, "⚪")
-            bg = {"critical": "#fef2f2", "warning": "#fffbeb", "info": "#f0f9ff"}.get(
-                severity, "#f8fafc"
-            )
-            bdr = {"critical": "#ef4444", "warning": "#f59e0b", "info": "#38bdf8"}.get(
-                severity, "#e2e8f0"
-            )
+            icon  = {"critical": "🔴", "warning": "🟡", "info": "🔵"}.get(severity, "⚪")
+            bg    = {"critical": "#fef2f2", "warning": "#fffbeb", "info": "#f0f9ff"}.get(severity, "#f8fafc")
+            bdr   = {"critical": "#ef4444", "warning": "#f59e0b", "info": "#38bdf8"}.get(severity, "#e2e8f0")
             st.markdown(
                 f'<div style="border-left:4px solid {bdr};padding:10px 14px;margin:6px 0;'
                 f'background:{bg};border-radius:8px;font-size:12px;">'
-                f"{icon} <b>{e['guardrail_type']}</b> &mdash; agent: {e['agent_name']} &mdash; "
-                f"value: <code>{e['value']}</code> vs threshold: <code>{e['threshold']}</code> &mdash; action: <b>{e['action']}</b>"
+                f'{icon} <b>{e["guardrail_type"]}</b> &mdash; agent: {e["agent_name"]} &mdash; '
+                f'value: <code>{e["value"]}</code> vs threshold: <code>{e["threshold"]}</code> &mdash; action: <b>{e["action"]}</b>'
                 f'<br><span style="color:#94a3b8;font-size:10px;">{e["timestamp"]} &nbsp;·&nbsp; run {e["run_id"]}</span>'
-                f"</div>",
-                unsafe_allow_html=True,
+                f'</div>',
+                unsafe_allow_html=True
             )
 
 # ── TAB 6: SETTINGS ──────────────────────────────────────────────────────────
@@ -643,25 +533,13 @@ with tab_settings:
     with st.form("guardrail_form"):
         c1, c2 = st.columns(2)
         with c1:
-            budget_cap = st.number_input(
-                "Budget cap per run (GBP)", value=0.50, step=0.05, min_value=0.01
-            )
-            agent_timeout = st.number_input(
-                "Agent timeout (seconds)", value=30, step=5, min_value=5
-            )
-            min_completeness = st.number_input(
-                "Min completeness score (%)", value=60.0, step=5.0
-            )
+            budget_cap = st.number_input("Budget cap per run (GBP)", value=0.50, step=0.05, min_value=0.01)
+            agent_timeout = st.number_input("Agent timeout (seconds)", value=30, step=5, min_value=5)
+            min_completeness = st.number_input("Min completeness score (%)", value=60.0, step=5.0)
         with c2:
-            max_pii_rows = st.number_input(
-                "Max PII rows (0 = warn always)", value=0, step=1
-            )
-            max_parse_failures = st.number_input(
-                "Max parse failures before abort", value=3, step=1
-            )
-            anomaly_warn = st.number_input(
-                "Anomaly score warn threshold (0-10)", value=9.0, step=0.5
-            )
+            max_pii_rows = st.number_input("Max PII rows (0 = warn always)", value=0, step=1)
+            max_parse_failures = st.number_input("Max parse failures before abort", value=3, step=1)
+            anomaly_warn = st.number_input("Anomaly score warn threshold (0-10)", value=9.0, step=0.5)
 
         guardrails_enabled = st.checkbox("Guardrails enabled", value=True)
         submitted = st.form_submit_button("Save settings")
@@ -679,6 +557,4 @@ with tab_settings:
 
     st.markdown("---")
     budget = get_budget()
-    st.markdown(
-        f"**Global spend so far:** GBP {budget['total_spent_gbp']:.4f} across {budget['run_count']} runs"
-    )
+    st.markdown(f"**Global spend so far:** GBP {budget['total_spent_gbp']:.4f} across {budget['run_count']} runs")

@@ -52,9 +52,7 @@ AGENT_TIMEOUTS = {
 
 def compute_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float:
     p = PRICING.get(model, PRICING["claude-sonnet-4-6"])
-    return (input_tokens / 1_000_000 * p["input_per_m"]) + (
-        output_tokens / 1_000_000 * p["output_per_m"]
-    )
+    return (input_tokens / 1_000_000 * p["input_per_m"]) + (output_tokens / 1_000_000 * p["output_per_m"])
 
 
 def compute_cost_gbp(model: str, input_tokens: int, output_tokens: int) -> float:

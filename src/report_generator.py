@@ -1,24 +1,23 @@
 """Generate a formatted PDF report from PDF pipeline analysis results."""
-
-from datetime import datetime
-
 from fpdf import FPDF
+from datetime import datetime
+import io
+
 
 # ── Latin-1 sanitiser ─────────────────────────────────────────────────────────
 _UNICODE_SUBS = {
-    "—": "-",  # em dash
-    "–": "-",  # en dash
-    "‘": "'",  # left single quote
-    "’": "'",  # right single quote
-    "“": '"',  # left double quote
-    "”": '"',  # right double quote
-    "•": "*",  # bullet
-    "‣": "*",  # triangular bullet
-    "…": "...",  # horizontal ellipsis
-    " ": " ",  # non-breaking space
-    "·": ".",  # middle dot
+    '—': '-',    # em dash
+    '–': '-',    # en dash
+    '‘': "'",    # left single quote
+    '’': "'",    # right single quote
+    '“': '"',    # left double quote
+    '”': '"',    # right double quote
+    '•': '*',    # bullet
+    '‣': '*',    # triangular bullet
+    '…': '...',  # horizontal ellipsis
+    ' ': ' ',    # non-breaking space
+    '·': '.',    # middle dot
 }
-
 
 def _safe(text) -> str:
     """Replace non-Latin-1 chars so Helvetica core font renders without error."""
@@ -26,26 +25,26 @@ def _safe(text) -> str:
         text = str(text)
     for ch, rep in _UNICODE_SUBS.items():
         text = text.replace(ch, rep)
-    return text.encode("latin-1", errors="replace").decode("latin-1")
+    return text.encode('latin-1', errors='replace').decode('latin-1')
 
 
 # ── Colours ───────────────────────────────────────────────────────────────────
-NAVY = (13, 27, 62)
+NAVY   = (13,  27,  62)
 PURPLE = (107, 63, 160)
-WHITE = (255, 255, 255)
-LIGHT = (248, 250, 252)
-MUTED = (100, 116, 139)
-RED = (220, 38, 38)
-AMBER = (217, 119, 6)
-GREEN = (22, 163, 74)
-DARK = (15, 23, 42)
+WHITE  = (255, 255, 255)
+LIGHT  = (248, 250, 252)
+MUTED  = (100, 116, 139)
+RED    = (220,  38,  38)
+AMBER  = (217, 119,   6)
+GREEN  = ( 22, 163,  74)
+DARK   = ( 15,  23,  42)
 
 
 class ReportPDF(FPDF):
     def __init__(self, title: str, mode: str):
         super().__init__()
         self.title_text = title
-        self.mode_text = mode
+        self.mode_text  = mode
         self.set_auto_page_break(auto=True, margin=18)
         self.set_margins(18, 18, 18)
 
@@ -54,16 +53,16 @@ class ReportPDF(FPDF):
         args = list(args)
         if len(args) > 2:
             args[2] = _safe(args[2])
-        elif "txt" in kwargs:
-            kwargs["txt"] = _safe(kwargs["txt"])
+        elif 'txt' in kwargs:
+            kwargs['txt'] = _safe(kwargs['txt'])
         return super().cell(*args, **kwargs)
 
     def multi_cell(self, *args, **kwargs):
         args = list(args)
         if len(args) > 2:
             args[2] = _safe(args[2])
-        elif "txt" in kwargs:
-            kwargs["txt"] = _safe(kwargs["txt"])
+        elif 'txt' in kwargs:
+            kwargs['txt'] = _safe(kwargs['txt'])
         return super().multi_cell(*args, **kwargs)
 
     def header(self):
@@ -77,12 +76,9 @@ class ReportPDF(FPDF):
         self.set_y(-14)
         self.set_font("Helvetica", "", 8)
         self.set_text_color(*MUTED)
-        self.cell(
-            0,
-            8,
-            f"Multi-Agent Data Pipeline  ·  Generated {datetime.utcnow().strftime('%d %b %Y %H:%M')} UTC  ·  Page {self.page_no()}",
-            align="C",
-        )
+        self.cell(0, 8,
+                  f"Multi-Agent Data Pipeline  ·  Generated {datetime.utcnow().strftime('%d %b %Y %H:%M')} UTC  ·  Page {self.page_no()}",
+                  align="C")
 
     # ── Helpers ───────────────────────────────────────────────────────────────
     def cover_block(self, pages: int, words: int, mode: str, models: dict):
@@ -94,33 +90,22 @@ class ReportPDF(FPDF):
         self.set_font("Helvetica", "", 11)
         self.set_text_color(*MUTED)
         self.cell(0, 7, f"Mode: {mode}  ·  {pages} pages  ·  {words:,} words", ln=True)
-        self.cell(
-            0,
-            6,
-            f"Generated: {datetime.utcnow().strftime('%d %b %Y, %H:%M UTC')}",
-            ln=True,
-        )
+        self.cell(0, 6, f"Generated: {datetime.utcnow().strftime('%d %b %Y, %H:%M UTC')}", ln=True)
         self.ln(4)
         # Model pills row
         model_labels = {
-            "pdf_parser": ("PDF Parser", models.get("parser", "")),
-            "entity_extractor": ("Entity Extractor", models.get("entity", "")),
-            "risk_detector": ("Risk Detector", models.get("risk", "")),
-            "action_extractor": ("Action Extractor", models.get("action", "")),
-            "summariser": ("Summariser", models.get("summary", "")),
+            "pdf_parser":      ("PDF Parser",       models.get("parser", "")),
+            "entity_extractor":("Entity Extractor", models.get("entity", "")),
+            "risk_detector":   ("Risk Detector",    models.get("risk",   "")),
+            "action_extractor":("Action Extractor", models.get("action", "")),
+            "summariser":      ("Summariser",        models.get("summary", "")),
         }
         self.set_font("Helvetica", "B", 8)
-        for _agent, (label, m) in model_labels.items():
+        for agent, (label, m) in model_labels.items():
             is_haiku = "haiku" in m.lower()
             self.set_fill_color(*(224, 242, 254) if is_haiku else (237, 233, 254))
             self.set_text_color(*(14, 116, 144) if is_haiku else (109, 40, 217))
-            self.cell(
-                33,
-                6,
-                f"{label}: {'Haiku' if is_haiku else 'Sonnet'}",
-                border=0,
-                fill=True,
-            )
+            self.cell(33, 6, f"{label}: {'Haiku' if is_haiku else 'Sonnet'}", border=0, fill=True)
             self.cell(1, 6, "")
         self.ln(10)
         self.set_draw_color(*PURPLE)
@@ -147,9 +132,7 @@ class ReportPDF(FPDF):
         self.set_x(self.l_margin)
 
     def bullet(self, text: str, color=DARK, indent: int = 4):
-        txt_w = (
-            self.w - self.l_margin - self.r_margin - indent - 4
-        )  # remaining after bullet cell
+        txt_w = self.w - self.l_margin - self.r_margin - indent - 4  # remaining after bullet cell
         self.set_font("Helvetica", "", 9)
         self.set_text_color(*color)
         self.set_x(self.l_margin + indent)
@@ -168,9 +151,7 @@ class ReportPDF(FPDF):
         self.set_font("Helvetica", "B", 11)
         self.set_fill_color(*bg)
         self.set_text_color(*fg)
-        self.cell(
-            50, 10, f"  {level_upper}  ({score}/10)", fill=True, border=0, ln=True
-        )
+        self.cell(50, 10, f"  {level_upper}  ({score}/10)", fill=True, border=0, ln=True)
         self.ln(2)
 
     def two_col_list(self, items: list, label: str):
@@ -186,30 +167,28 @@ class ReportPDF(FPDF):
         max_rows = max(len(left), len(right))
         r_col_w = self.w - self.l_margin - self.r_margin - 4 - 82 - 4  # 84 mm
         for i in range(max_rows):
-            l_text = left[i] if i < len(left) else ""
+            l_text = left[i]  if i < len(left)  else ""
             r_text = right[i] if i < len(right) else ""
             self.set_x(self.l_margin)
             self.cell(4, 5, "*" if l_text else "")
             self.cell(82, 5, l_text[:50] + ("..." if len(l_text) > 50 else ""))
             self.cell(4, 5, "*" if r_text else "")
-            self.multi_cell(
-                r_col_w, 5, r_text[:50] + ("..." if len(r_text) > 50 else "")
-            )
+            self.multi_cell(r_col_w, 5, r_text[:50] + ("..." if len(r_text) > 50 else ""))
             self.set_x(self.l_margin)
         self.ln(3)
 
 
 def generate_pdf_report(cur: dict) -> bytes:
     """Build and return a PDF report as bytes given a result snapshot dict."""
-    mode = cur.get("mode", "Unknown")
-    pages = cur.get("total_pages", 0)
-    words = cur.get("word_count", 0)
-    models = cur.get("models", {})
+    mode    = cur.get("mode", "Unknown")
+    pages   = cur.get("total_pages", 0)
+    words   = cur.get("word_count", 0)
+    models  = cur.get("models", {})
 
-    r_parser = cur["parser"]
-    r_entity = cur["entity"]
-    r_risk = cur["risk"]
-    r_action = cur["action"]
+    r_parser  = cur["parser"]
+    r_entity  = cur["entity"]
+    r_risk    = cur["risk"]
+    r_action  = cur["action"]
     r_summary = cur["summary"]
 
     pdf = ReportPDF(title="PDF Intelligence Report", mode=mode)
@@ -220,11 +199,11 @@ def generate_pdf_report(cur: dict) -> bytes:
 
     # ── 1. Document Overview ──────────────────────────────────────────────────
     pdf.section_heading("1. Document Overview", NAVY)
-    pdf.kv("Document type", r_parser.document_type.title())
-    pdf.kv("Language", r_parser.language)
-    pdf.kv("Quality", r_parser.document_quality.title())
-    pdf.kv("Has tables", "Yes" if r_parser.has_tables else "No")
-    pdf.kv("Has numbers", "Yes" if r_parser.has_numbers else "No")
+    pdf.kv("Document type",  r_parser.document_type.title())
+    pdf.kv("Language",       r_parser.language)
+    pdf.kv("Quality",        r_parser.document_quality.title())
+    pdf.kv("Has tables",     "Yes" if r_parser.has_tables  else "No")
+    pdf.kv("Has numbers",    "Yes" if r_parser.has_numbers else "No")
     if r_parser.key_topics:
         pdf.kv("Key topics", "  ·  ".join(r_parser.key_topics))
     if r_parser.parsing_notes:
@@ -239,12 +218,12 @@ def generate_pdf_report(cur: dict) -> bytes:
     pdf.kv("Total entities", str(r_entity.total_entities))
     pdf.ln(2)
     for label, items in [
-        ("People", r_entity.people),
+        ("People",        r_entity.people),
         ("Organisations", r_entity.organisations),
-        ("Locations", r_entity.locations),
-        ("Dates", r_entity.dates),
-        ("Amounts", r_entity.amounts),
-        ("Emails", r_entity.emails),
+        ("Locations",     r_entity.locations),
+        ("Dates",         r_entity.dates),
+        ("Amounts",       r_entity.amounts),
+        ("Emails",        r_entity.emails),
     ]:
         if items:
             pdf.two_col_list(items, label)
@@ -256,19 +235,13 @@ def generate_pdf_report(cur: dict) -> bytes:
     pdf.set_text_color(*MUTED)
     pdf.cell(0, 6, "RISK LEVEL", ln=True)
     pdf.risk_badge(r_risk.risk_level, r_risk.overall_risk_score)
-    pdf.kv(
-        "PII detected",
-        "Yes — " + ", ".join(r_risk.pii_types)
-        if r_risk.pii_detected and r_risk.pii_types
-        else ("Yes" if r_risk.pii_detected else "No"),
-        bold_val=r_risk.pii_detected,
-    )
+    pdf.kv("PII detected", "Yes — " + ", ".join(r_risk.pii_types) if r_risk.pii_detected and r_risk.pii_types else ("Yes" if r_risk.pii_detected else "No"), bold_val=r_risk.pii_detected)
     pdf.ln(3)
     for label, items, color in [
         ("Compliance risks", r_risk.compliance_risks, RED),
-        ("Legal risks", r_risk.legal_risks, AMBER),
-        ("Financial risks", r_risk.financial_risks, AMBER),
-        ("Recommendations", r_risk.recommendations, GREEN),
+        ("Legal risks",      r_risk.legal_risks,      AMBER),
+        ("Financial risks",  r_risk.financial_risks,  AMBER),
+        ("Recommendations",  r_risk.recommendations,  GREEN),
     ]:
         if items:
             pdf.set_font("Helvetica", "B", 9)
@@ -291,10 +264,10 @@ def generate_pdf_report(cur: dict) -> bytes:
         pdf.ln(2)
     for label, items, color in [
         ("All action items", r_action.action_items, DARK),
-        ("Decisions made", r_action.decisions_made, GREEN),
-        ("Deadlines", r_action.deadlines, AMBER),
-        ("Follow-ups", r_action.follow_ups, PURPLE),
-        ("Owners", r_action.owners, MUTED),
+        ("Decisions made",   r_action.decisions_made, GREEN),
+        ("Deadlines",        r_action.deadlines, AMBER),
+        ("Follow-ups",       r_action.follow_ups, PURPLE),
+        ("Owners",           r_action.owners, MUTED),
     ]:
         if items:
             pdf.set_font("Helvetica", "B", 9)
@@ -309,11 +282,7 @@ def generate_pdf_report(cur: dict) -> bytes:
     pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(*DARK)
     pdf.set_x(pdf.l_margin)
-    pdf.multi_cell(
-        pdf.w - pdf.l_margin - pdf.r_margin,
-        6,
-        r_summary.summary or "No summary generated.",
-    )
+    pdf.multi_cell(pdf.w - pdf.l_margin - pdf.r_margin, 6, r_summary.summary or "No summary generated.")
     pdf.set_x(pdf.l_margin)
     pdf.ln(4)
     if r_summary.key_stats:
@@ -322,9 +291,7 @@ def generate_pdf_report(cur: dict) -> bytes:
         pdf.cell(0, 6, "KEY STATISTICS", ln=True)
         pdf.set_font("Helvetica", "", 9)
         pdf.set_text_color(*DARK)
-        for k, v in (
-            r_summary.key_stats.items() if hasattr(r_summary.key_stats, "items") else []
-        ):
+        for k, v in (r_summary.key_stats.items() if hasattr(r_summary.key_stats, "items") else []):
             pdf.kv(str(k), str(v))
         pdf.ln(2)
     if r_summary.recommendations:
@@ -335,5 +302,6 @@ def generate_pdf_report(cur: dict) -> bytes:
             pdf.bullet(rec, color=GREEN)
 
     # ── Return bytes ──────────────────────────────────────────────────────────
+    buf = io.BytesIO()
     pdf_bytes = pdf.output()
     return bytes(pdf_bytes)
