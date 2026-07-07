@@ -11,7 +11,7 @@
 
 <br/>
 
-[![Version](https://img.shields.io/badge/version-1.3.0-brightgreen?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.2.0-brightgreen?style=flat-square)](CHANGELOG.md)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://multi-agent-pipeline-demo.streamlit.app)
 [![Streamlit](https://img.shields.io/badge/UI-Streamlit-red?style=flat-square&logo=streamlit&logoColor=white)](https://streamlit.io)
@@ -27,7 +27,7 @@
 
 <br/>
 
-**[🚀 Quick Start](#quick-start) · [⚡ What's New in v1.3](#whats-new-in-v13) · [🔀 Router Engine](#router-engine) · [📄 PDF Intelligence](#pdf-intelligence-pipeline) · [📡 Observability](#observability-dashboard) · [🔌 Connectors](#data-sources) · [🤝 Contributing](#contributing)**
+**[🚀 Quick Start](#quick-start) · [⚡ What's New in v1.2](#whats-new-in-v12) · [🔀 Router Engine](#router-engine) · [📄 PDF Intelligence](#pdf-intelligence-pipeline) · [📡 Observability](#observability-dashboard) · [🔌 Connectors](#data-sources) · [🤝 Contributing](#contributing)**
 
 <br/>
 
@@ -39,15 +39,12 @@
 
 ---
 
-## What's New in v1.3
+## What's New in v1.2
 
-> **v1.3.0 — July 2026** · [Full changelog](#changelog)
+> **v1.2.0 — June 2026** · [Full changelog](#changelog)
 
 | Feature | Detail |
 |---------|--------|
-| **Modular UI Architecture** | `app.py` refactored from 1869 lines to ~50 lines. Shared components in `src/ui/`, pages in `src/pages/` |
-| **Separate Page Modules** | CSV, PDF, and Database pages are now independent files with `render()` functions |
-| **Cleaner Codebase** | Easier to maintain, test, and extend — add new pages without touching the orchestrator |
 | **PDF Intelligence Report** | Download the full 5-section analysis as a formatted PDF — not JSON. Cover page, entities, risk badges, action items, executive summary |
 | **VPN / Proxy Block** | Automatic VPN and hosting IP detection via ip-api.com. Blocked users see a full-screen denial page |
 | **Anonymous Run Tracking** | SHA-256 IP + User-Agent fingerprint persisted to SQLite. 2 free runs survive page refresh — no signup required |
@@ -394,19 +391,10 @@ The hash is stored in SQLite — never the raw IP. Runs persist across page refr
 
 ```
 multi-agent-data-pipeline/
-├── app.py                        # Thin orchestrator (~50 lines) — imports, page config, mode dispatch
+├── app.py                        # Main Streamlit UI — router, BYOK, VPN block, PDF pipeline
 ├── pages/
-│   └── observability.py          # 7-tab observability dashboard (Streamlit native page)
+│   └── observability.py          # 7-tab observability dashboard
 ├── src/
-│   ├── ui/                       # Shared UI layer (extracted from app.py)
-│   │   ├── styles.py             # All CSS styles (~700 lines)
-│   │   ├── layout.py             # Topbar, hero section, agents strip, footer
-│   │   ├── auth.py               # GitHub auth, BYOK, VPN block, fingerprinting
-│   │   └── helpers.py            # Result tabs, cost card, comparison table
-│   ├── pages/                    # Page-specific render functions
-│   │   ├── csv_pipeline.py       # CSV pipeline page — mode selector, upload, run, comparison
-│   │   ├── pdf_intelligence.py   # PDF intelligence page — mode selector, sequential agents, results
-│   │   └── db_connectors.py      # Database connectors page — 6 DB forms, mode selector, run
 │   ├── agents/
 │   │   ├── cleaner.py            # CSV cleaning — Haiku
 │   │   ├── pii_anonymiser.py     # PII detection — Haiku
@@ -445,7 +433,7 @@ multi-agent-data-pipeline/
 ├── .streamlit/
 │   └── config.toml               # Dark theme, CORS settings for cloud deployment
 ├── tests/
-│   └── test_pipeline.py          # 18 passing tests
+│   └── test_pipeline.py          # 16 passing tests
 ├── requirements.txt
 └── .env.example
 ```
@@ -679,29 +667,11 @@ gcloud run deploy multi-agent-pipeline \
 | Persistence | SQLite (`pipeline_runs.db`) |
 | Access Control | ip-api.com (VPN detection), SHA-256 fingerprinting |
 | Connectors | Databricks SDK, Snowflake, psycopg2, mysql-connector, BigQuery, DuckDB |
-| Testing | pytest (18 passing) |
+| Testing | pytest (16 passing) |
 
 ---
 
 ## Changelog
-
-### v1.3.0 — July 2026
-
-**Changed**
-- **Modular UI architecture** — `app.py` refactored from 1869 lines to ~50 lines
-- Shared UI components extracted to `src/ui/` (styles, layout, auth, helpers)
-- Page-specific code extracted to `src/pages/` (csv_pipeline, pdf_intelligence, db_connectors)
-- Each page module exports a single `render(visitor_fp)` function
-- `app.py` is now a thin orchestrator: imports, page config, VPN check, mode dispatch
-
-**Architecture**
-- `src/ui/styles.py` — all CSS (~700 lines)
-- `src/ui/layout.py` — topbar, hero section, agents strip, footer
-- `src/ui/auth.py` — GitHub auth, BYOK, VPN block, fingerprinting
-- `src/ui/helpers.py` — result tabs, cost card, comparison table
-- `src/pages/csv_pipeline.py` — CSV pipeline page
-- `src/pages/pdf_intelligence.py` — PDF intelligence page
-- `src/pages/db_connectors.py` — database connectors page
 
 ### v1.2.0 — June 2026
 
@@ -747,7 +717,7 @@ gcloud run deploy multi-agent-pipeline \
 - Database connectors — Databricks, Snowflake, PostgreSQL, MySQL, BigQuery, DuckDB
 - Streamlit UI — dark theme
 - CLI entrypoint
-- 18 unit tests
+- 16 unit tests
 
 ---
 
@@ -843,7 +813,7 @@ git push origin feature/your-feature
 ### Contribution Guidelines
 
 - One feature per PR
-- All 18 tests must pass
+- All 16 tests must pass
 - Follow existing agent structure — same `run()` signature, same `span.finish()` pattern
 - Update README if adding a connector or agent
 
@@ -856,7 +826,7 @@ pytest tests/ -v
 ```
 
 ```
-18 passed in 0.6s
+16 passed in 0.6s
 ```
 
 ---

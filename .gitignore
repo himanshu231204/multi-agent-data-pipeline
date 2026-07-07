@@ -1,7 +1,6 @@
 # Environment
 .env
 venv/
-myenv/
 venv_win/
 __pycache__/
 *.pyc
@@ -22,7 +21,3 @@ build/
 
 # Windows zone identifiers
 *:Zone.Identifier
-
-# coding agents
-.opencode/
-AGENTS.md
