@@ -1,29 +1,14 @@
-import json
-import logging
-import os
 import sqlite3
+import json
+import os
 from datetime import datetime
-
 from src.observability.tracer import RunTracer
-
-logger = logging.getLogger(__name__)
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "pipeline_runs.db")
 
 
 def _conn():
     return sqlite3.connect(DB_PATH)
-
-
-def _safe_row_to_dict(cols: list, row: tuple) -> dict:
-    """Map column names to row values with schema drift detection."""
-    if len(cols) != len(row):
-        logger.warning(
-            "Column/value length mismatch: %d cols vs %d values — possible schema drift",
-            len(cols),
-            len(row),
-        )
-    return dict(zip(cols, row, strict=False))
 
 
 def init_db():
@@ -86,91 +71,56 @@ def init_db():
                 last_updated TEXT
             )
         """)
-        c.execute(
-            "INSERT OR IGNORE INTO budget (id, total_spent_gbp, run_count, last_updated) VALUES (1, 0, 0, ?)",
-            (datetime.utcnow().isoformat(),),
-        )
+        c.execute("INSERT OR IGNORE INTO budget (id, total_spent_gbp, run_count, last_updated) VALUES (1, 0, 0, ?)",
+                  (datetime.utcnow().isoformat(),))
 
 
 def save_run(tracer: RunTracer, status: str = "complete"):
     init_db()
     ts = datetime.utcnow().isoformat()
     with _conn() as c:
-        c.execute(
-            """
+        c.execute("""
             INSERT OR REPLACE INTO runs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
-        """,
-            (
-                tracer.run_id,
-                ts,
-                tracer.source,
-                tracer.mode,
-                tracer.total_cost_gbp,
-                tracer.total_latency_ms,
-                tracer.total_input_tokens,
-                tracer.total_output_tokens,
-                len(tracer.spans),
-                tracer.parse_failures,
-                tracer.timeout_count,
-                len(tracer.guardrail_events),
-                status,
-            ),
-        )
+        """, (
+            tracer.run_id, ts, tracer.source, tracer.mode,
+            tracer.total_cost_gbp, tracer.total_latency_ms,
+            tracer.total_input_tokens, tracer.total_output_tokens,
+            len(tracer.spans), tracer.parse_failures, tracer.timeout_count,
+            len(tracer.guardrail_events), status
+        ))
         for span in tracer.spans:
-            c.execute(
-                """
+            c.execute("""
                 INSERT INTO agent_spans
                 (run_id, agent_name, model, input_tokens, output_tokens, cost_gbp,
                  latency_ms, status, parse_ok, system_prompt, user_message,
                  raw_response, parsed_output, error_message, guardrails_fired)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-            """,
-                (
-                    span.run_id,
-                    span.agent_name,
-                    span.model,
-                    span.input_tokens,
-                    span.output_tokens,
-                    span.cost_gbp,
-                    span.latency_ms,
-                    span.status,
-                    int(span.parse_ok),
-                    span.system_prompt,
-                    span.user_message,
-                    span.raw_response,
-                    span.parsed_output,
-                    span.error_message,
-                    json.dumps(span.guardrails_fired),
-                ),
-            )
+            """, (
+                span.run_id, span.agent_name, span.model,
+                span.input_tokens, span.output_tokens, span.cost_gbp,
+                span.latency_ms, span.status, int(span.parse_ok),
+                span.system_prompt, span.user_message,
+                span.raw_response, span.parsed_output, span.error_message,
+                json.dumps(span.guardrails_fired)
+            ))
             for g in span.guardrails_fired:
-                c.execute(
-                    """
+                c.execute("""
                     INSERT INTO guardrail_events
                     (run_id, agent_name, guardrail_type, value, threshold, action, severity, timestamp)
                     VALUES (?,?,?,?,?,?,?,?)
-                """,
-                    (
-                        span.run_id,
-                        span.agent_name,
-                        g.get("type", ""),
-                        str(g.get("value", "")),
-                        str(g.get("threshold", "")),
-                        g.get("action", ""),
-                        g.get("severity", "info"),
-                        ts,
-                    ),
-                )
-        c.execute(
-            """
+                """, (
+                    span.run_id, span.agent_name,
+                    g.get("type", ""), str(g.get("value", "")),
+                    str(g.get("threshold", "")), g.get("action", ""),
+                    g.get("severity", "info"), ts
+                ))
+        c.execute("""
             UPDATE budget SET
                 total_spent_gbp = total_spent_gbp + ?,
                 run_count = run_count + 1,
                 last_updated = ?
             WHERE id = 1
-        """,
-            (tracer.total_cost_gbp, ts),
-        )
+        """, (tracer.total_cost_gbp, ts))
 
 
 def get_runs(limit: int = 50):
@@ -179,22 +129,10 @@ def get_runs(limit: int = 50):
         rows = c.execute(
             "SELECT * FROM runs ORDER BY timestamp DESC LIMIT ?", (limit,)
         ).fetchall()
-    cols = [
-        "run_id",
-        "timestamp",
-        "source",
-        "mode",
-        "total_cost_gbp",
-        "total_latency_ms",
-        "total_input_tokens",
-        "total_output_tokens",
-        "agent_count",
-        "parse_failures",
-        "timeout_count",
-        "guardrail_events",
-        "status",
-    ]
-    return [_safe_row_to_dict(cols, r) for r in rows]
+    cols = ["run_id","timestamp","source","mode","total_cost_gbp","total_latency_ms",
+            "total_input_tokens","total_output_tokens","agent_count","parse_failures",
+            "timeout_count","guardrail_events","status"]
+    return [dict(zip(cols, r)) for r in rows]
 
 
 def get_spans(run_id: str):
@@ -203,25 +141,10 @@ def get_spans(run_id: str):
         rows = c.execute(
             "SELECT * FROM agent_spans WHERE run_id=? ORDER BY id", (run_id,)
         ).fetchall()
-    cols = [
-        "id",
-        "run_id",
-        "agent_name",
-        "model",
-        "input_tokens",
-        "output_tokens",
-        "cost_gbp",
-        "latency_ms",
-        "status",
-        "parse_ok",
-        "system_prompt",
-        "user_message",
-        "raw_response",
-        "parsed_output",
-        "error_message",
-        "guardrails_fired",
-    ]
-    return [_safe_row_to_dict(cols, r) for r in rows]
+    cols = ["id","run_id","agent_name","model","input_tokens","output_tokens","cost_gbp",
+            "latency_ms","status","parse_ok","system_prompt","user_message",
+            "raw_response","parsed_output","error_message","guardrails_fired"]
+    return [dict(zip(cols, r)) for r in rows]
 
 
 def get_guardrail_events(limit: int = 100):
@@ -230,31 +153,15 @@ def get_guardrail_events(limit: int = 100):
         rows = c.execute(
             "SELECT * FROM guardrail_events ORDER BY id DESC LIMIT ?", (limit,)
         ).fetchall()
-    cols = [
-        "id",
-        "run_id",
-        "agent_name",
-        "guardrail_type",
-        "value",
-        "threshold",
-        "action",
-        "severity",
-        "timestamp",
-    ]
-    return [_safe_row_to_dict(cols, r) for r in rows]
+    cols = ["id","run_id","agent_name","guardrail_type","value","threshold","action","severity","timestamp"]
+    return [dict(zip(cols, r)) for r in rows]
 
 
 def get_budget():
     init_db()
     with _conn() as c:
-        row = c.execute(
-            "SELECT total_spent_gbp, run_count FROM budget WHERE id=1"
-        ).fetchone()
-    return (
-        {"total_spent_gbp": row[0], "run_count": row[1]}
-        if row
-        else {"total_spent_gbp": 0, "run_count": 0}
-    )
+        row = c.execute("SELECT total_spent_gbp, run_count FROM budget WHERE id=1").fetchone()
+    return {"total_spent_gbp": row[0], "run_count": row[1]} if row else {"total_spent_gbp": 0, "run_count": 0}
 
 
 def get_agent_stats():
@@ -270,13 +177,5 @@ def get_agent_stats():
                    SUM(CASE WHEN status='timeout' THEN 1 ELSE 0 END) as timeouts
             FROM agent_spans GROUP BY agent_name
         """).fetchall()
-    cols = [
-        "agent_name",
-        "runs",
-        "avg_latency_ms",
-        "avg_cost_gbp",
-        "parse_failures",
-        "errors",
-        "timeouts",
-    ]
-    return [_safe_row_to_dict(cols, r) for r in rows]
+    cols = ["agent_name","runs","avg_latency_ms","avg_cost_gbp","parse_failures","errors","timeouts"]
+    return [dict(zip(cols, r)) for r in rows]

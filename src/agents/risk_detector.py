@@ -1,6 +1,5 @@
-import json
 import os
-
+import json
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
@@ -23,7 +22,6 @@ JSON format:
     "recommendations": ["recommendation1", "recommendation2"]
 }"""
 
-
 class RiskDetectorResult:
     def __init__(self, **kwargs):
         self.pii_detected = kwargs.get("pii_detected", False)
@@ -38,65 +36,35 @@ class RiskDetectorResult:
     def model_dump(self):
         return self.__dict__
 
-
-def run(
-    text_preview: str,
-    total_pages: int,
-    model: str = "claude-sonnet-4-6",
-    api_key: str = None,
-    span=None,
-) -> RiskDetectorResult:
+def run(text_preview: str, total_pages: int, model: str = "claude-sonnet-4-6", api_key: str = None, span=None) -> RiskDetectorResult:
     print(f"[Risk Detector Agent] Starting... model={model}")
     import os
-
     _client = Anthropic(api_key=api_key or os.getenv("ANTHROPIC_API_KEY"))
     user_msg = f"Detect risks in this document ({total_pages} pages):\n\n{text_preview}"
     response = _client.messages.create(
         model=model,
         max_tokens=1000,
         system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_msg}],
+        messages=[{"role": "user", "content": user_msg}]
     )
 
-    raw = (
-        response.content[0]
-        .text.strip()
-        .removeprefix("```json")
-        .removeprefix("```")
-        .removesuffix("```")
-        .strip()
-    )
+    raw = response.content[0].text.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
 
     try:
         data = json.loads(raw)
         result = RiskDetectorResult(**data)
         if span:
-            span.finish(
-                input_tokens=response.usage.input_tokens,
-                output_tokens=response.usage.output_tokens,
-                model=model,
-                raw_response=raw,
-                parsed_output=str(result.model_dump()),
-                parse_ok=True,
-            )
-        print(
-            f"[Risk Detector Agent] Done — {result.risk_level}, {result.overall_risk_score}/10"
-        )
+            span.finish(input_tokens=response.usage.input_tokens,
+                        output_tokens=response.usage.output_tokens,
+                        model=model, raw_response=raw,
+                        parsed_output=str(result.model_dump()), parse_ok=True)
+        print(f"[Risk Detector Agent] Done — {result.risk_level}, {result.overall_risk_score}/10")
         return result
     except Exception as e:
         if span:
-            span.finish(
-                input_tokens=getattr(response.usage, "input_tokens", 0),
-                output_tokens=getattr(response.usage, "output_tokens", 0),
-                model=model,
-                raw_response=raw,
-                parsed_output="",
-                parse_ok=False,
-                error_message=str(e),
-            )
-        return RiskDetectorResult(
-            pii_detected=False,
-            overall_risk_score=0.0,
-            risk_level="unknown",
-            recommendations=["Could not parse response"],
-        )
+            span.finish(input_tokens=getattr(response.usage, 'input_tokens', 0),
+                        output_tokens=getattr(response.usage, 'output_tokens', 0),
+                        model=model, raw_response=raw,
+                        parsed_output="", parse_ok=False, error_message=str(e))
+        return RiskDetectorResult(pii_detected=False, overall_risk_score=0.0,
+                                  risk_level="unknown", recommendations=["Could not parse response"])

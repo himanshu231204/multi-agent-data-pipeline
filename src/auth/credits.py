@@ -1,12 +1,8 @@
-import hashlib
-import logging
-import os
 import sqlite3
-
-from src.auth.github_api import has_followed, has_forked, has_starred
-from src.cost_config import FREE_RUNS, LIFETIME_ACCESS_RUNS, STAR_BONUS_RUNS
-
-logger = logging.getLogger(__name__)
+import os
+import hashlib
+from src.cost_config import FREE_RUNS, STAR_BONUS_RUNS, LIFETIME_ACCESS_RUNS
+from src.auth.github_api import has_starred, has_forked, has_followed, validate_username
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "pipeline_runs.db")
 
@@ -18,7 +14,6 @@ def _conn():
 
 
 # ── IP FINGERPRINT ────────────────────────────────────────────────────────────
-
 
 def make_fingerprint(ip: str, user_agent: str) -> str:
     """SHA-256 of IP + User-Agent, truncated to 20 chars."""
@@ -41,7 +36,6 @@ def _init_anon_table():
 def get_anon_runs(fingerprint: str) -> int:
     _init_anon_table()
     from datetime import datetime
-
     now = datetime.utcnow().isoformat()
     with _conn() as c:
         row = c.execute(
@@ -52,10 +46,7 @@ def get_anon_runs(fingerprint: str) -> int:
                 "INSERT INTO anon_visitors VALUES (?,0,?,?)", (fingerprint, now, now)
             )
             return 0
-        c.execute(
-            "UPDATE anon_visitors SET last_seen=? WHERE fingerprint=?",
-            (now, fingerprint),
-        )
+        c.execute("UPDATE anon_visitors SET last_seen=? WHERE fingerprint=?", (now, fingerprint))
         return row[0]
 
 
@@ -64,7 +55,7 @@ def record_anon_run(fingerprint: str):
     with _conn() as c:
         c.execute(
             "UPDATE anon_visitors SET runs_used = runs_used + 1 WHERE fingerprint=?",
-            (fingerprint,),
+            (fingerprint,)
         )
 
 
@@ -91,7 +82,6 @@ def _init_users_table():
 def get_or_create_user(username: str) -> dict:
     _init_users_table()
     from datetime import datetime
-
     now = datetime.utcnow().isoformat()
     with _conn() as c:
         row = c.execute(
@@ -99,32 +89,17 @@ def get_or_create_user(username: str) -> dict:
         ).fetchone()
         if not row:
             c.execute(
-                "INSERT INTO users VALUES (?,0,0,0,0,0,?,?)", (username, now, now)
+                "INSERT INTO users VALUES (?,0,0,0,0,0,?,?)",
+                (username, now, now)
             )
             row = c.execute(
                 "SELECT * FROM users WHERE github_username=?", (username,)
             ).fetchone()
         else:
-            c.execute(
-                "UPDATE users SET last_seen=? WHERE github_username=?", (now, username)
-            )
+            c.execute("UPDATE users SET last_seen=? WHERE github_username=?", (now, username))
 
-    cols = [
-        "github_username",
-        "runs_used",
-        "has_forked",
-        "has_starred",
-        "has_followed",
-        "using_byok",
-        "first_seen",
-        "last_seen",
-    ]
-    if len(cols) != len(row):
-        logger.warning(
-            "Column/value length mismatch in credits: %d cols vs %d values",
-            len(cols), len(row),
-        )
-    return dict(zip(cols, row, strict=False))
+    cols = ["github_username", "runs_used", "has_forked", "has_starred", "has_followed", "using_byok", "first_seen", "last_seen"]
+    return dict(zip(cols, row))
 
 
 def refresh_github_status(username: str) -> dict:
@@ -135,13 +110,9 @@ def refresh_github_status(username: str) -> dict:
     with _conn() as c:
         c.execute(
             "UPDATE users SET has_forked=?, has_starred=?, has_followed=? WHERE github_username=?",
-            (forked, starred, followed, username),
+            (forked, starred, followed, username)
         )
-    return {
-        "has_forked": bool(forked),
-        "has_starred": bool(starred),
-        "has_followed": bool(followed),
-    }
+    return {"has_forked": bool(forked), "has_starred": bool(starred), "has_followed": bool(followed)}
 
 
 def get_credits(username: str) -> dict:
@@ -176,14 +147,17 @@ def record_run(username: str):
     with _conn() as c:
         c.execute(
             "UPDATE users SET runs_used = runs_used + 1 WHERE github_username=?",
-            (username,),
+            (username,)
         )
 
 
 def enable_byok(username: str):
     _init_users_table()
     with _conn() as c:
-        c.execute("UPDATE users SET using_byok=1 WHERE github_username=?", (username,))
+        c.execute(
+            "UPDATE users SET using_byok=1 WHERE github_username=?",
+            (username,)
+        )
 
 
 def can_run(username: str, byok_key: str = None) -> tuple[bool, str]:
