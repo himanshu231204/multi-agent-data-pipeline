@@ -1149,7 +1149,7 @@ if mode == "📄 CSV Pipeline":
             f'{baseline_tick}'
             f'<div class="mode-card-badge badge-baseline">Baseline</div>'
             f'<div class="mode-card-title">&#9889; Without Router</div>'
-            f'<div class="mode-card-sub">All 6 agents use Claude Sonnet &mdash; maximum accuracy, no shortcuts.</div>'
+            f'<div class="mode-card-sub">All 6 agents use Sonnet &mdash; maximum accuracy, no shortcuts.</div>'
             f'<div class="mode-stats">'
             f'<span class="mode-stat stat-cost-high">~&pound;0.27 / run</span>'
             f'<span class="mode-stat stat-speed-slow">~14s</span>'
